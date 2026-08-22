@@ -5,6 +5,7 @@ import {
 } from "@/lib/openai";
 
 import { ApiResponse } from "@/lib/api/response";
+import { aiGuard } from "@/lib/api/aiGuard";
 import { ApiErrorHandler } from "@/lib/api/errors";
 import { logger } from "@/lib/api/logger";
 import { checkRateLimit } from "@/lib/api/ratelimit";
@@ -12,6 +13,12 @@ import { requirePractice } from "@/lib/auth/requirePractice";
 
 export async function POST(request: NextRequest) {
   try {
+    const disabled = aiGuard();
+
+    if (disabled) {
+      return disabled;
+    }
+
     const { success } = await checkRateLimit(
       request,
       10,

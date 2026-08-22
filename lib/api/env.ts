@@ -14,6 +14,13 @@ const envSchema = z.object({
   ENCRYPTION_KEY: z
     .string()
     .length(64, "ENCRYPTION_KEY must be 64 hexadecimal characters."),
+
+  // Routes that send patient data to OpenAI stay disabled until a BAA and
+  // zero-retention terms are in place. Defaults closed so an unset or
+  // misspelled value can never enable PHI disclosure.
+  AI_PHI_ENABLED: z
+    .enum(["true", "false"])
+    .default("false"),
 });
 
 export const env = envSchema.parse(process.env);

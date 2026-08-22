@@ -86,4 +86,18 @@ export class ApiResponse {
       }
     );
   }
+
+  static serviceUnavailable(
+    message = "Service unavailable."
+  ) {
+    return NextResponse.json(
+      {
+        success: false,
+        message,
+      },
+      {
+        status: 503,
+      }
+    );
+  }
 }
