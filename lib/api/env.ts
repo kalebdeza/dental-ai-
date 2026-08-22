@@ -1,0 +1,19 @@
+import { z } from "zod";
+
+const envSchema = z.object({
+  NEXT_PUBLIC_SUPABASE_URL: z.string().url(),
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(1),
+
+  SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
+
+  OPENAI_API_KEY: z.string().min(1),
+
+  OPEN_DENTAL_API_URL: z.string().url(),
+  OPEN_DENTAL_DEVELOPER_KEY: z.string().min(1),
+
+  ENCRYPTION_KEY: z
+    .string()
+    .length(64, "ENCRYPTION_KEY must be 64 hexadecimal characters."),
+});
+
+export const env = envSchema.parse(process.env);
