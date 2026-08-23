@@ -27,7 +27,6 @@ export default function CreatePracticePage() {
     const {
       data: { user },
     } = await supabase.auth.getUser();
-    console.log("Logged in user:", user);
 
     if (!user) {
       alert("Please login.");
@@ -36,13 +35,12 @@ export default function CreatePracticePage() {
     }
 
     const { data: organization, error: organizationError } = await supabase
-  .from("organizations")
-  .select("*")
-  .eq("owner_user_id", user.id)
-  .single();
-
-console.log("Organization:", organization);
-console.log("Organization Error:", JSON.stringify(organizationError, null, 2));
+      .from("organizations")
+      .select("*")
+      .eq("owner_user_id", user.id)
+      .order("created_at", { ascending: true })
+      .limit(1)
+      .maybeSingle();
 
     if (organizationError || !organization) {
       alert("Organization not found.");
@@ -50,18 +48,22 @@ console.log("Organization Error:", JSON.stringify(organizationError, null, 2));
       return;
     }
 
-    const { error } = await supabase
-      .from("practices")
-      .insert({
-        organization_id: organization.id,
-        name: practiceName,
-        phone,
-        email,
-        address,
-        city,
-        state,
-        zip_code: zipCode,
-      });
+    // Creates the practice and its owner membership in one transaction. A
+    // practice with no members would be unreachable once row level
+    // security is enabled, including by the person who just created it.
+    const { error } = await supabase.rpc(
+      "create_practice_with_owner",
+      {
+        p_organization_id: organization.id,
+        p_name: practiceName,
+        p_phone: phone || undefined,
+        p_email: email || undefined,
+        p_address: address || undefined,
+        p_city: city || undefined,
+        p_state: state || undefined,
+        p_zip_code: zipCode || undefined,
+      }
+    );
 
     setLoading(false);
 

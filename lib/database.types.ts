@@ -486,6 +486,38 @@ export type Database = {
           },
         ]
       }
+      practice_members: {
+        Row: {
+          created_at: string
+          id: string
+          practice_id: string
+          role: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          practice_id: string
+          role?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          practice_id?: string
+          role?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "practice_members_practice_id_fkey"
+            columns: ["practice_id"]
+            isOneToOne: false
+            referencedRelation: "practices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       practices: {
         Row: {
           active: boolean
@@ -931,7 +963,42 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      create_practice_with_owner: {
+        Args: {
+          p_address?: string
+          p_city?: string
+          p_email?: string
+          p_name: string
+          p_organization_id: string
+          p_phone?: string
+          p_state?: string
+          p_zip_code?: string
+        }
+        Returns: {
+          active: boolean
+          address: string | null
+          city: string | null
+          created_at: string
+          email: string | null
+          id: string
+          name: string
+          organization_id: string
+          phone: string | null
+          state: string | null
+          timezone: string
+          updated_at: string
+          zip_code: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "practices"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      user_organization_ids: { Args: never; Returns: string[] }
       user_practice_ids: { Args: never; Returns: string[] }
+      user_practice_role: { Args: { p_practice_id: string }; Returns: string }
     }
     Enums: {
       [_ in never]: never
@@ -1067,3 +1134,4 @@ export const Constants = {
     Enums: {},
   },
 } as const
+

@@ -13,6 +13,18 @@ export type Organization =
 export type Practice =
   Database["public"]["Tables"]["practices"]["Row"];
 
+export type PracticeMember =
+  Database["public"]["Tables"]["practice_members"]["Row"];
+
+import type { PracticeRole } from "./roles";
+
+export {
+  PRACTICE_ROLES,
+  isPracticeRole,
+} from "./roles";
+
+export type { PracticeRole } from "./roles";
+
 export interface AuthFailure {
   success: false;
   response: NextResponse;
@@ -26,10 +38,17 @@ export interface UserSuccess {
 
 export interface OrganizationSuccess extends UserSuccess {
   organization: Organization;
+  organizations: Organization[];
 }
 
-export interface PracticeSuccess extends OrganizationSuccess {
+// No longer extends OrganizationSuccess: membership attaches to the
+// practice, so the organization is derived from the selected practice
+// rather than gating access to it.
+export interface PracticeSuccess extends UserSuccess {
+  organization: Organization;
   practice: Practice;
+  practices: Practice[];
+  role: PracticeRole;
 }
 
 export type RequireUserResult =

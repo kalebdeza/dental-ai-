@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
       return auth.response;
     }
 
-    const { supabase } = auth;
+    const { supabase, practice } = auth;
     const { message } = await req.json();
 
     const [
@@ -39,13 +39,20 @@ export async function POST(req: NextRequest) {
       { data: claims },
       { data: opportunities },
     ] = await Promise.all([
-      supabase.from("patients").select("*"),
+      supabase
+        .from("patients")
+        .select("*")
+        .eq("practice_id", practice.id),
 
-      supabase.from("claims").select("*"),
+      supabase
+        .from("claims")
+        .select("*")
+        .eq("practice_id", practice.id),
 
       supabase
         .from("revenue_opportunities")
         .select("*")
+        .eq("practice_id", practice.id)
         .eq("completed", false),
     ]);
 

@@ -11,12 +11,13 @@ export async function GET() {
       return auth.response;
     }
 
-    const { supabase } = auth;
+    const { supabase, practice } = auth;
 
     const { data: opportunities, error: opportunitiesError } =
       await supabase
         .from("revenue_opportunities")
         .select("*")
+        .eq("practice_id", practice.id)
         .eq("completed", false);
 
     if (opportunitiesError) {
@@ -26,7 +27,8 @@ export async function GET() {
     const { data: patients, count: patientCount, error: patientsError } =
       await supabase
         .from("patients")
-        .select("*", { count: "exact" });
+        .select("*", { count: "exact" })
+        .eq("practice_id", practice.id);
 
     if (patientsError) {
       throw patientsError;

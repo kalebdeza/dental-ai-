@@ -11,7 +11,7 @@ export async function GET() {
       return auth.response;
     }
 
-    const { supabase } = auth;
+    const { supabase, practice } = auth;
 
     const {
       data: opportunities,
@@ -19,6 +19,7 @@ export async function GET() {
     } = await supabase
       .from("revenue_opportunities")
       .select("*")
+      .eq("practice_id", practice.id)
       .eq("completed", false)
       .order("created_at", {
         ascending: false,
@@ -44,7 +45,8 @@ export async function GET() {
               "id",
               opportunity.patient_id
             )
-            .single();
+            .eq("practice_id", practice.id)
+            .maybeSingle();
 
         if (patient) {
           patientName =
