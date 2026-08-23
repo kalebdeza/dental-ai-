@@ -13,10 +13,11 @@ export async function GET() {
       return auth.response;
     }
 
-    const { practice } = auth;
+    const { supabase, practice } = auth;
 
     const tasks =
       await taskGenerator.generateTasks(
+        supabase,
         practice.id
       );
 

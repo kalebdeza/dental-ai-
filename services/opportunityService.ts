@@ -1,4 +1,4 @@
-import { supabase } from "@/lib/supabase";
+import type { SupabaseServerClient } from "@/lib/auth/types";
 
 type Opportunity = {
   practice_id: string;
@@ -16,6 +16,7 @@ type Opportunity = {
 
 export class OpportunityService {
   async replaceOpenOpportunities(
+    supabase: SupabaseServerClient,
     practiceId: string,
     opportunities: Opportunity[]
   ) {

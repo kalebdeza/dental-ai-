@@ -1,4 +1,4 @@
-import { supabase } from "@/lib/supabase";
+import type { SupabaseServerClient } from "@/lib/auth/types";
 
 export type Task = {
   id: string;
@@ -11,6 +11,7 @@ export type Task = {
 
 export class TaskGenerator {
   async generateTasks(
+    supabase: SupabaseServerClient,
     practiceId: string
   ): Promise<Task[]> {
     const {

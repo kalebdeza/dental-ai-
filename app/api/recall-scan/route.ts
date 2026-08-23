@@ -8,14 +8,6 @@ import { logger } from "@/lib/api/logger";
 import { checkRateLimit } from "@/lib/api/ratelimit";
 import { requirePractice } from "@/lib/auth/requirePractice";
 
-import { createClient } from "@supabase/supabase-js";
-import { env } from "@/lib/api/env";
-
-const supabase = createClient(
-  env.NEXT_PUBLIC_SUPABASE_URL,
-  env.SUPABASE_SERVICE_ROLE_KEY
-);
-
 export async function GET(req: NextRequest) {
   try {
     const { success } = await checkRateLimit(req, 5, "1 m");
@@ -32,9 +24,10 @@ export async function GET(req: NextRequest) {
       return auth.response;
     }
 
-    const { practice } = auth;
+    const { supabase, practice } = auth;
 
     const opportunities = await recallScanner.scan(
+      supabase,
       practice.id
     );
 

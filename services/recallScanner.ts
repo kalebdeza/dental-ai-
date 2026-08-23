@@ -1,9 +1,12 @@
-import { supabase } from "@/lib/supabase";
+import type { SupabaseServerClient } from "@/lib/auth/types";
 
 import { isRecallComplete } from "@/lib/opendental/status";
 
 export class RecallScannerService {
-  async scan(practiceId: string) {
+  async scan(
+    supabase: SupabaseServerClient,
+    practiceId: string
+  ) {
     const { data: recalls, error } =
       await supabase
         .from("recalls")

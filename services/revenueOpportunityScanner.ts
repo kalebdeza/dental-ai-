@@ -3,16 +3,21 @@ import { recallScanner } from "@/services/recallScanner";
 import { treatmentScanner } from "@/services/treatmentScanner";
 import { opportunityService } from "@/services/opportunityService";
 
+import type { SupabaseServerClient } from "@/lib/auth/types";
+
 export class RevenueOpportunityScanner {
-  async scan(practiceId: string) {
+  async scan(
+    supabase: SupabaseServerClient,
+    practiceId: string
+  ) {
     const [
       claimOpportunities,
       recallOpportunities,
       treatmentOpportunities,
     ] = await Promise.all([
-      revenueScanner.scan(practiceId),
-      recallScanner.scan(practiceId),
-      treatmentScanner.scan(practiceId),
+      revenueScanner.scan(supabase, practiceId),
+      recallScanner.scan(supabase, practiceId),
+      treatmentScanner.scan(supabase, practiceId),
     ]);
 
     const opportunities = [
@@ -23,6 +28,7 @@ export class RevenueOpportunityScanner {
 
     const result =
       await opportunityService.replaceOpenOpportunities(
+        supabase,
         practiceId,
         opportunities
       );

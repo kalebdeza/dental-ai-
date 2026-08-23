@@ -1,4 +1,4 @@
-import { supabase } from "@/lib/supabase";
+import type { SupabaseServerClient } from "@/lib/auth/types";
 
 import {
   openDental,
@@ -12,7 +12,10 @@ import {
 } from "@/lib/opendental/status";
 
 export class TreatmentScannerService {
-  async scan(practiceId: string) {
+  async scan(
+    supabase: SupabaseServerClient,
+    practiceId: string
+  ) {
     const integration =
       await integrationService.getOpenDentalIntegration(
         practiceId

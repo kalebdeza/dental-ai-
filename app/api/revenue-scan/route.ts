@@ -30,6 +30,7 @@ export async function GET(req: NextRequest) {
 
     const result =
       await revenueOpportunityScanner.scan(
+        auth.supabase,
         auth.practice.id
       );
 

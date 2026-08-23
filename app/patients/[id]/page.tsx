@@ -1,6 +1,4 @@
-import { createClient } from "@/lib/supabase/client";
-
-const supabase = createClient();
+import { requirePracticeForPage } from "@/lib/auth/requirePracticeForPage";
 
 import PatientAI from "./PatientAI";
 import RecallEmail from "./RecallEmail";
@@ -23,11 +21,20 @@ export default async function PatientPage({
 }: PageProps) {
   const { id } = await params;
 
+  const { supabase, practice } =
+    await requirePracticeForPage();
+
+  /*
+   * Scoped by practice as well as id, and maybeSingle rather than single, so a
+   * patient belonging to another practice is indistinguishable from one that
+   * does not exist. Knowing an id is not authorization to read the record.
+   */
   const { data: patient } = await supabase
     .from("patients")
     .select("*")
     .eq("id", id)
-    .single();
+    .eq("practice_id", practice.id)
+    .maybeSingle();
 
   if (!patient) {
     return (
@@ -40,6 +47,7 @@ export default async function PatientPage({
   const { data: opportunities, error } = await supabase
     .from("revenue_opportunities")
     .select("*")
+    .eq("practice_id", practice.id)
     .eq("patient_id", id)
     .eq("completed", false);
 

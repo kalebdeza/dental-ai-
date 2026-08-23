@@ -1,4 +1,4 @@
-import { supabase } from "@/lib/supabase";
+import type { SupabaseServerClient } from "@/lib/auth/types";
 
 import {
   isClaimAwaitingSubmission,
@@ -6,7 +6,16 @@ import {
 } from "@/lib/opendental/status";
 
 export class RevenueScannerService {
-  async scan(practiceId: string) {
+  /*
+   * The client is supplied by the caller rather than imported, so this runs
+   * with the identity of the request that triggered the scan. The practice_id
+   * filters below stay as they are: once row level security is enabled they
+   * become a redundant second check rather than the only one.
+   */
+  async scan(
+    supabase: SupabaseServerClient,
+    practiceId: string
+  ) {
     const { data: procedures, error } =
       await supabase
         .from("procedures")

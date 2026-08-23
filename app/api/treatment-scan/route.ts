@@ -8,16 +8,16 @@ import { logger } from "@/lib/api/logger";
 import { checkRateLimit } from "@/lib/api/ratelimit";
 import { requirePractice } from "@/lib/auth/requirePractice";
 
-import { createClient } from "@supabase/supabase-js";
-import { env } from "@/lib/api/env";
+import type { SupabaseServerClient } from "@/lib/auth/types";
 
-const supabase = createClient(
-  env.NEXT_PUBLIC_SUPABASE_URL,
-  env.SUPABASE_SERVICE_ROLE_KEY
-);
-
-async function runScan(practiceId: string) {
-  const opportunities = await treatmentScanner.scan(practiceId);
+async function runScan(
+  supabase: SupabaseServerClient,
+  practiceId: string
+) {
+  const opportunities = await treatmentScanner.scan(
+    supabase,
+    practiceId
+  );
 
   const { error: deleteError } = await supabase
     .from("revenue_opportunities")
@@ -58,7 +58,10 @@ export async function GET(req: NextRequest) {
       return auth.response;
     }
 
-    const opportunities = await runScan(auth.practice.id);
+    const opportunities = await runScan(
+      auth.supabase,
+      auth.practice.id
+    );
 
     return ApiResponse.ok({
       success: true,
