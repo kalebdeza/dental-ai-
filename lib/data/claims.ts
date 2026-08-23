@@ -1,6 +1,8 @@
 import { supabase } from "../supabase";
 import type { Tables } from "../database.types";
 
+import { resolveSolePracticeId } from "./resolvePracticeId";
+
 export type Claim = Tables<"claims">;
 export type Patient = Tables<"patients">;
 export type Provider = Tables<"providers">;
@@ -11,9 +13,16 @@ export interface ClaimWithDetails extends Claim {
 }
 
 export async function getClaims(): Promise<Claim[]> {
+  const practiceId = await resolveSolePracticeId();
+
+  if (!practiceId) {
+    return [];
+  }
+
   const { data, error } = await supabase
     .from("claims")
     .select("*")
+    .eq("practice_id", practiceId)
     .order("created_at", { ascending: false });
 
   if (error) throw error;
@@ -22,10 +31,17 @@ export async function getClaims(): Promise<Claim[]> {
 }
 
 export async function getClaim(id: string): Promise<Claim> {
+  const practiceId = await resolveSolePracticeId();
+
+  if (!practiceId) {
+    throw new Error("Practice not resolved.");
+  }
+
   const { data, error } = await supabase
     .from("claims")
     .select("*")
     .eq("id", id)
+    .eq("practice_id", practiceId)
     .single();
 
   if (error) throw error;
@@ -43,6 +59,7 @@ export async function getClaimWithDetails(
       .from("patients")
       .select("*")
       .eq("id", claim.patient_id)
+      .eq("practice_id", claim.practice_id)
       .single(),
 
     claim.provider_id
@@ -50,6 +67,7 @@ export async function getClaimWithDetails(
           .from("providers")
           .select("*")
           .eq("id", claim.provider_id)
+          .eq("practice_id", claim.practice_id)
           .single()
       : Promise.resolve({ data: null }),
   ]);
