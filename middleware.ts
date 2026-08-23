@@ -52,8 +52,32 @@ export async function middleware(request: NextRequest) {
     }
   );
 
-  // Refresh the session if needed
-  await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const pathname = request.nextUrl.pathname;
+  const isApi =
+    pathname === "/api" || pathname.startsWith("/api/");
+  const isPublic =
+    pathname === "/login" ||
+    pathname === "/login/" ||
+    pathname === "/signup" ||
+    pathname === "/signup/";
+
+  if (!user && !isApi && !isPublic) {
+    const redirectResponse = NextResponse.redirect(
+      new URL("/login", request.url)
+    );
+
+    // getUser() may have rotated cookies onto `response`. A new redirect
+    // object would drop them unless they are copied across.
+    for (const cookie of response.cookies.getAll()) {
+      redirectResponse.cookies.set(cookie);
+    }
+
+    return redirectResponse;
+  }
 
   return response;
 }
