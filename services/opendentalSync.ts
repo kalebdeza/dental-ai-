@@ -3,6 +3,13 @@ import { createClient } from "@/lib/supabase/server";
 import { integrationService } from "@/services/integrationService";
 import { openDental } from "@/services/opendental";
 
+import {
+  mapClaimStatus,
+  mapProcedureStatus,
+  normalizeOpenDentalDate,
+  normalizeSourceStatus,
+} from "@/lib/opendental/status";
+
 function estimateRecallRevenue(
   recallType: string | null | undefined
 ): number {
@@ -89,7 +96,9 @@ export class OpenDentalSyncService {
               patient.MiddleI ?? null,
 
             birth_date:
-              patient.Birthdate ?? null,
+              normalizeOpenDentalDate(
+                patient.Birthdate
+              ),
 
             gender:
               patient.Gender ?? null,
@@ -129,7 +138,9 @@ export class OpenDentalSyncService {
               ),
 
             last_visit:
-              patient.DateLastVisit ?? null,
+              normalizeOpenDentalDate(
+                patient.DateLastVisit
+              ),
 
             patient_status:
               patient.PatStatus ?? null,
@@ -318,10 +329,15 @@ export class OpenDentalSyncService {
         );
       }
 
+      const procedureDate =
+        normalizeOpenDentalDate(
+          procedure.ProcDate
+        );
+
       const completedAt =
-        procedure.ProcDate
+        procedureDate
           ? new Date(
-              procedure.ProcDate
+              procedureDate
             ).toISOString()
           : null;
 
@@ -350,8 +366,14 @@ export class OpenDentalSyncService {
               procedure.Surf ?? null,
 
             status:
-              procedure.ProcStatus ??
-              "Unknown",
+              mapProcedureStatus(
+                procedure.ProcStatus
+              ),
+
+            source_status:
+              normalizeSourceStatus(
+                procedure.ProcStatus
+              ),
 
             fee:
               Number(
@@ -428,10 +450,15 @@ export class OpenDentalSyncService {
           0
         );
 
+      const dateSent =
+        normalizeOpenDentalDate(
+          claim.DateSent
+        );
+
       const submittedAt =
-        claim.DateSent
+        dateSent
           ? new Date(
-              claim.DateSent
+              dateSent
             ).toISOString()
           : null;
 
@@ -460,8 +487,14 @@ export class OpenDentalSyncService {
             insurance_company: null,
 
             status:
-              claim.ClaimStatus ??
-              "Unknown",
+              mapClaimStatus(
+                claim.ClaimStatus
+              ),
+
+            source_status:
+              normalizeSourceStatus(
+                claim.ClaimStatus
+              ),
 
             amount_billed:
               amountBilled,
@@ -525,14 +558,30 @@ export class OpenDentalSyncService {
       }
 
       const dueDate =
-        recall.DateDue ?? null;
+        normalizeOpenDentalDate(
+          recall.DateDue
+        );
 
       const completedDate =
-        recall.DatePrevious ?? null;
+        normalizeOpenDentalDate(
+          recall.DatePrevious
+        );
 
+      /*
+       * RecallStatus describes the reminder that was sent, not whether the
+       * recall was fulfilled, so it is stored for reference only. Nothing
+       * derives completion from it. The raw integer goes to source_status
+       * and the API's display name is kept for humans.
+       */
       const status =
-        recall.RecallStatus ??
-        "Unknown";
+        normalizeSourceStatus(
+          recall.recallStatus
+        ) ?? "Unknown";
+
+      const sourceStatus =
+        normalizeSourceStatus(
+          recall.RecallStatus
+        );
 
       const recallType =
         recall.RecallTypeNum
@@ -567,6 +616,9 @@ export class OpenDentalSyncService {
               completedDate,
 
             status,
+
+            source_status:
+              sourceStatus,
 
             estimated_revenue:
               estimatedRevenue,

@@ -230,6 +230,7 @@ export type Database = {
           provider_id: string | null
           remaining_balance: number
           source_claim_id: string
+          source_status: string | null
           status: string
           submitted_at: string | null
           updated_at: string
@@ -251,6 +252,7 @@ export type Database = {
           provider_id?: string | null
           remaining_balance?: number
           source_claim_id: string
+          source_status?: string | null
           status: string
           submitted_at?: string | null
           updated_at?: string
@@ -272,6 +274,7 @@ export type Database = {
           provider_id?: string | null
           remaining_balance?: number
           source_claim_id?: string
+          source_status?: string | null
           status?: string
           submitted_at?: string | null
           updated_at?: string
@@ -603,6 +606,7 @@ export type Database = {
           procedure_code_id: string
           provider_id: string | null
           source_procedure_id: string
+          source_status: string | null
           status: string
           surface: string | null
           tooth: string | null
@@ -624,6 +628,7 @@ export type Database = {
           procedure_code_id: string
           provider_id?: string | null
           source_procedure_id: string
+          source_status?: string | null
           status: string
           surface?: string | null
           tooth?: string | null
@@ -645,6 +650,7 @@ export type Database = {
           procedure_code_id?: string
           provider_id?: string | null
           source_procedure_id?: string
+          source_status?: string | null
           status?: string
           surface?: string | null
           tooth?: string | null
@@ -780,6 +786,7 @@ export type Database = {
           practice_id: string
           recall_type: string | null
           source_recall_id: string
+          source_status: string | null
           status: string
           updated_at: string
         }
@@ -795,6 +802,7 @@ export type Database = {
           practice_id: string
           recall_type?: string | null
           source_recall_id: string
+          source_status?: string | null
           status?: string
           updated_at?: string
         }
@@ -810,6 +818,7 @@ export type Database = {
           practice_id?: string
           recall_type?: string | null
           source_recall_id?: string
+          source_status?: string | null
           status?: string
           updated_at?: string
         }
@@ -922,7 +931,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      user_practice_ids: { Args: never; Returns: string[] }
     }
     Enums: {
       [_ in never]: never

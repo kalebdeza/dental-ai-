@@ -1,5 +1,10 @@
 import { supabase } from "@/lib/supabase";
 
+import {
+  isClaimAwaitingSubmission,
+  PROCEDURE_STATUS,
+} from "@/lib/opendental/status";
+
 export class RevenueScannerService {
   async scan(practiceId: string) {
     const { data: procedures, error } =
@@ -7,7 +12,10 @@ export class RevenueScannerService {
         .from("procedures")
         .select("*")
         .eq("practice_id", practiceId)
-        .eq("status", "Completed");
+        .eq(
+          "status",
+          PROCEDURE_STATUS.Completed
+        );
 
     if (error) {
       throw error;
@@ -102,8 +110,9 @@ export class RevenueScannerService {
        * submitted, use the actual billed amount.
        */
       if (
-        matchingClaim.status ===
-        "Not Submitted"
+        isClaimAwaitingSubmission(
+          matchingClaim.status
+        )
       ) {
         opportunities.push({
           practice_id: practiceId,

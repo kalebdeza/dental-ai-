@@ -1,5 +1,7 @@
 import { supabase } from "@/lib/supabase";
 
+import { isRecallComplete } from "@/lib/opendental/status";
+
 export class RecallScannerService {
   async scan(practiceId: string) {
     const { data: recalls, error } =
@@ -20,9 +22,18 @@ export class RecallScannerService {
         continue;
       }
 
+      /*
+       * Completion is derived from the date alone. Open Dental's recall
+       * status describes the reminder that was sent, not the outcome, so it
+       * can never indicate that a recall was fulfilled.
+       *
+       * isRecallComplete also rejects the "0001-01-01" sentinel, in case a
+       * row predates the normalizing migration.
+       */
       if (
-        recall.status === "Completed" ||
-        recall.completed_date
+        isRecallComplete(
+          recall.completed_date
+        )
       ) {
         continue;
       }

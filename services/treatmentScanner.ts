@@ -6,6 +6,11 @@ import {
 
 import { integrationService } from "@/services/integrationService";
 
+import {
+  isOutstandingPlannedTreatment,
+  TREAT_PLAN_STATUS,
+} from "@/lib/opendental/status";
+
 export class TreatmentScannerService {
   async scan(practiceId: string) {
     const integration =
@@ -68,8 +73,10 @@ export class TreatmentScannerService {
 
     for (const plan of treatmentPlans) {
       if (
-        plan.TPStatus !== "Active" &&
-        plan.TPStatus !== "Inactive"
+        plan.TPStatus !==
+          TREAT_PLAN_STATUS.Active &&
+        plan.TPStatus !==
+          TREAT_PLAN_STATUS.Inactive
       ) {
         continue;
       }
@@ -120,23 +127,28 @@ export class TreatmentScannerService {
           throw procedureError;
         }
 
-        // A completed procedure is not
-        // an unscheduled treatment opportunity.
+        if (!procedure) {
+          continue;
+        }
+
+        /*
+         * Only work that is still actively treatment planned is an
+         * opportunity. This excludes procedures already completed, deleted,
+         * referred out, recorded as pre-existing, or charted as conditions.
+         */
         if (
-          procedure?.status ===
-          "Completed"
+          !isOutstandingPlannedTreatment(
+            procedure.status
+          )
         ) {
           continue;
         }
 
         const fee = Number(
-          procedure?.fee ?? 0
+          procedure.fee ?? 0
         );
 
-        if (
-          !procedure ||
-          fee <= 0
-        ) {
+        if (fee <= 0) {
           continue;
         }
 
@@ -155,7 +167,8 @@ export class TreatmentScannerService {
             "Treatment",
 
           priority:
-            plan.TPStatus === "Active"
+            plan.TPStatus ===
+            TREAT_PLAN_STATUS.Active
               ? "High"
               : "Medium",
 
@@ -163,7 +176,8 @@ export class TreatmentScannerService {
             fee,
 
           confidence_score:
-            plan.TPStatus === "Active"
+            plan.TPStatus ===
+            TREAT_PLAN_STATUS.Active
               ? 95
               : 90,
 
@@ -184,7 +198,10 @@ export class TreatmentScannerService {
     // --------------------------------------------------
 
     for (const plan of treatmentPlans) {
-      if (plan.TPStatus !== "Saved") {
+      if (
+        plan.TPStatus !==
+        TREAT_PLAN_STATUS.Saved
+      ) {
         continue;
       }
 

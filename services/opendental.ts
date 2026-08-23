@@ -1,6 +1,12 @@
 import { env } from "@/lib/api/env";
 import { withTimeout } from "@/lib/api/timeout";
 
+import type {
+  OpenDentalClaimStatus,
+  OpenDentalProcStatus,
+  TreatPlanStatus,
+} from "@/lib/opendental/status";
+
 export type OpenDentalPatient = {
   PatNum: number;
   FName?: string;
@@ -37,7 +43,7 @@ export type OpenDentalProcedure = {
   PatNum: number;
   ProcDate?: string;
   ProcFee?: number;
-  ProcStatus?: string;
+  ProcStatus?: OpenDentalProcStatus;
   ProvNum?: number;
   CodeNum?: number;
   ToothNum?: string;
@@ -48,7 +54,7 @@ export type OpenDentalClaim = {
   ClaimNum: number;
   PatNum: number;
   DateSent?: string;
-  ClaimStatus?: string;
+  ClaimStatus?: OpenDentalClaimStatus;
   ClaimFee?: number;
   InsPayEst?: number;
   InsPayAmt?: number;
@@ -68,7 +74,19 @@ export type OpenDentalRecall = {
   PatNum: number;
   DateDue?: string;
   DatePrevious?: string;
-  RecallStatus?: string;
+
+  /**
+   * Integer key into Open Dental's definition table, describing the reminder
+   * that was sent rather than whether the recall was fulfilled. Never a
+   * completion status. See lib/opendental/status.
+   */
+  RecallStatus?: number;
+
+  /**
+   * Display name for RecallStatus, e.g. "Mailed Postcard".
+   */
+  recallStatus?: string;
+
   DateScheduled?: string;
   RecallTypeNum?: number;
 };
@@ -85,7 +103,7 @@ export type OpenDentalTreatPlan = {
   DateTP?: string;
   Heading?: string;
   Note?: string;
-  TPStatus?: string;
+  TPStatus?: TreatPlanStatus;
 };
 
 /**
