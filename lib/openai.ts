@@ -1,8 +1,10 @@
 import OpenAI from "openai";
 
-const client = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+function getOpenAIClient() {
+  return new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY,
+  });
+}
 
 export interface DashboardAIData {
   totalRecoverableRevenue: number;
@@ -17,6 +19,7 @@ export interface DashboardAIData {
 export async function generateAIInsights(
   data: DashboardAIData
 ): Promise<string> {
+  const client = getOpenAIClient();
   const prompt = `
 You are an elite dental practice consultant.
 
@@ -65,6 +68,7 @@ export async function generatePracticeResponse(
   practiceContext: string,
   userQuestion: string
 ): Promise<string> {
+  const client = getOpenAIClient();
   const systemPrompt = `
 You are Dental Revenue AI.
 
@@ -122,6 +126,7 @@ export async function generateClaimNarrative(
   procedureCode: string,
   insuranceEstimate: number
 ): Promise<string> {
+  const client = getOpenAIClient();
   const response = await client.responses.create({
     model: "gpt-5.5",
     input: [
