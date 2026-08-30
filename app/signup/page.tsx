@@ -20,7 +20,7 @@ export default function SignupPage() {
 
     setLoading(true);
 
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -37,8 +37,15 @@ export default function SignupPage() {
       return;
     }
 
-    alert("Account created successfully!");
+    if (data.session) {
+      router.refresh();
+      router.push("/onboarding");
+      return;
+    }
 
+    alert(
+      "Account created. Check your email to confirm, then sign in."
+    );
     router.push("/login");
   }
 

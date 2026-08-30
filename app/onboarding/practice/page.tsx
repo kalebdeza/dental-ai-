@@ -72,7 +72,8 @@ export default function CreatePracticePage() {
       return;
     }
 
-    router.push("/connect");
+    router.refresh();
+    router.push("/");
   }
 
   return (
