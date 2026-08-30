@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "node --test \"lib/**/*.test.mts\""
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.4",
@@ -36,7 +37,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.2.11",
-    "supabase": "^2.113.0",
+    "supabase": "^2.115.0",
     "tailwindcss": "^4.3.3",
     "typescript": "^5"
   }
