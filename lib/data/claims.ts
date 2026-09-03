@@ -7,6 +7,11 @@ export type Claim = Tables<"claims">;
 export type Patient = Tables<"patients">;
 export type Provider = Tables<"providers">;
 
+/**
+ * Claims have no procedure_id in the schema, so procedure cannot be loaded
+ * as a related row. patient_id is required, but the patient row can still
+ * be missing. provider_id is nullable.
+ */
 export interface ClaimWithDetails extends Claim {
   patient: Patient | null;
   provider: Provider | null;
@@ -60,7 +65,7 @@ export async function getClaimWithDetails(
       .select("*")
       .eq("id", claim.patient_id)
       .eq("practice_id", claim.practice_id)
-      .single(),
+      .maybeSingle(),
 
     claim.provider_id
       ? supabase
@@ -68,13 +73,13 @@ export async function getClaimWithDetails(
           .select("*")
           .eq("id", claim.provider_id)
           .eq("practice_id", claim.practice_id)
-          .single()
+          .maybeSingle()
       : Promise.resolve({ data: null }),
   ]);
 
   return {
     ...claim,
-    patient,
-    provider,
+    patient: patient ?? null,
+    provider: provider ?? null,
   };
 }

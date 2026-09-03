@@ -10,14 +10,18 @@ import {
   Copy,
 } from "lucide-react";
 
+import type { ClaimWithDetails } from "../../../../lib/data/claims";
+import {
+  formatPatientName,
+  formatProcedureName,
+} from "../../../../lib/data/claimDisplay";
+
 interface Props {
-  claim: any;
+  claim: ClaimWithDetails;
 }
 
 export default function AIClaimCopilot({ claim }: Props) {
-  const remaining =
-    Number(claim.insurance_estimate) -
-    Number(claim.insurance_paid);
+  const remaining = Number(claim.remaining_balance);
 
     const [loading, setLoading] = useState(false);
 
@@ -35,17 +39,14 @@ async function generateNarrative() {
       },
 
       body: JSON.stringify({
-        patientName:
-          `${claim.patient.first_name} ${claim.patient.last_name}`,
+        patientName: formatPatientName(claim.patient),
 
-        procedureName:
-          claim.procedure.procedure_name,
+        procedureName: formatProcedureName(null),
 
-        procedureCode:
-          claim.procedure.procedure_code,
+        procedureCode: "Not available",
 
         insuranceEstimate:
-          claim.insurance_estimate,
+          claim.amount_billed,
       }),
     });
 

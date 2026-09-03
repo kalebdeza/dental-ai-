@@ -1,5 +1,11 @@
+import type { ClaimWithDetails } from "../../../../lib/data/claims";
+import {
+  formatClaimDate,
+  formatProcedureName,
+} from "../../../../lib/data/claimDisplay";
+
 interface Props {
-  claim: any;
+  claim: ClaimWithDetails;
 }
 
 export default function ClaimSummary({ claim }: Props) {
@@ -14,13 +20,13 @@ export default function ClaimSummary({ claim }: Props) {
 
         <div className="flex justify-between">
           <span className="text-slate-500">Procedure</span>
-          <span className="font-medium">{claim.procedure.procedure_name}</span>
+          <span className="font-medium">{formatProcedureName(null)}</span>
         </div>
 
         <div className="flex justify-between">
           <span className="text-slate-500">Amount</span>
           <span className="font-bold text-green-600">
-            ${Number(claim.insurance_estimate).toLocaleString()}
+            ${Number(claim.amount_billed).toLocaleString()}
           </span>
         </div>
 
@@ -31,7 +37,9 @@ export default function ClaimSummary({ claim }: Props) {
 
         <div className="flex justify-between">
           <span className="text-slate-500">Submitted</span>
-          <span>{new Date(claim.created_at).toLocaleDateString()}</span>
+          <span>
+            {formatClaimDate(claim.submitted_at ?? claim.created_at)}
+          </span>
         </div>
 
       </div>

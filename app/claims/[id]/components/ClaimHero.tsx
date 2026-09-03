@@ -1,8 +1,11 @@
 import Link from "next/link";
 import { ArrowLeft, FileText } from "lucide-react";
 
+import type { ClaimWithDetails } from "../../../../lib/data/claims";
+import { formatPatientName } from "../../../../lib/data/claimDisplay";
+
 interface ClaimHeroProps {
-  claim: any;
+  claim: ClaimWithDetails;
 }
 
 export default function ClaimHero({ claim }: ClaimHeroProps) {
@@ -30,11 +33,11 @@ export default function ClaimHero({ claim }: ClaimHeroProps) {
           </p>
 
           <h1 className="mt-1 text-4xl font-bold">
-            {claim.patient.first_name} {claim.patient.last_name}
+            {formatPatientName(claim.patient)}
           </h1>
 
           <p className="mt-2 text-slate-300">
-            Claim #{claim.claim_number}
+            Claim #{claim.claim_number ?? "Not available"}
           </p>
 
         </div>
