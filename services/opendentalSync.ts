@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 
 import { integrationService } from "@/services/integrationService";
+import { estimateRecallRevenue } from "@/lib/opendental/recallRevenue";
 import { openDental } from "@/services/opendental";
 
 import {
@@ -9,38 +10,6 @@ import {
   normalizeOpenDentalDate,
   normalizeSourceStatus,
 } from "@/lib/opendental/status";
-
-function estimateRecallRevenue(
-  recallType: string | null | undefined
-): number {
-  const normalized = String(
-    recallType ?? ""
-  ).toLowerCase();
-
-  if (
-    normalized.includes("hygiene") ||
-    normalized.includes("prophy") ||
-    normalized.includes("cleaning")
-  ) {
-    return 250;
-  }
-
-  if (
-    normalized.includes("perio") ||
-    normalized.includes("periodontal")
-  ) {
-    return 350;
-  }
-
-  if (
-    normalized.includes("exam") ||
-    normalized.includes("recall")
-  ) {
-    return 200;
-  }
-
-  return 250;
-}
 
 export class OpenDentalSyncService {
   async sync(

@@ -316,7 +316,10 @@ export type Database = {
           customer_key: string | null
           external_practice_id: string | null
           id: string
+          last_claim_scan_at: string | null
+          last_recall_scan_at: string | null
           last_sync_at: string | null
+          last_treatment_scan_at: string | null
           practice_id: string
           provider: string
           status: string
@@ -328,7 +331,10 @@ export type Database = {
           customer_key?: string | null
           external_practice_id?: string | null
           id?: string
+          last_claim_scan_at?: string | null
+          last_recall_scan_at?: string | null
           last_sync_at?: string | null
+          last_treatment_scan_at?: string | null
           practice_id: string
           provider: string
           status?: string
@@ -340,7 +346,10 @@ export type Database = {
           customer_key?: string | null
           external_practice_id?: string | null
           id?: string
+          last_claim_scan_at?: string | null
+          last_recall_scan_at?: string | null
           last_sync_at?: string | null
+          last_treatment_scan_at?: string | null
           practice_id?: string
           provider?: string
           status?: string
