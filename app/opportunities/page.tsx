@@ -22,11 +22,6 @@ export default function OpportunitiesPage() {
   useEffect(() => {
     async function loadOpportunities() {
       try {
-        // Generate fresh opportunities from
-        // the current synced Open Dental data.
-        await fetch("/api/revenue-scan");
-
-        // Load the saved opportunities.
         const response = await fetch(
           "/api/opportunities"
         );
@@ -42,11 +37,8 @@ export default function OpportunitiesPage() {
         setOpportunities(
           Array.isArray(data) ? data : []
         );
-      } catch (error) {
-        console.error(
-          "Failed to load opportunities:",
-          error
-        );
+      } catch {
+        console.error("Failed to load opportunities.");
       } finally {
         setLoading(false);
       }

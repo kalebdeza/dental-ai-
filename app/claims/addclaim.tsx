@@ -80,8 +80,6 @@ export default function AddClaim({ onAddClaim }: Props) {
 
       <button
   onClick={async () => {
-    console.log("Submitted Date:", submittedDate);
-
     await onAddClaim({
       patient_name: patientName,
       insurance_company: insuranceCompany,

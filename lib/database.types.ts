@@ -887,54 +887,129 @@ export type Database = {
           },
         ]
       }
+      opportunity_activities: {
+        Row: {
+          actor_user_id: string
+          contact_outcome: string | null
+          created_at: string
+          event_type: string
+          from_status: string | null
+          id: string
+          note: string | null
+          opportunity_id: string
+          practice_id: string
+          snoozed_until: string | null
+          to_status: string | null
+        }
+        Insert: {
+          actor_user_id: string
+          contact_outcome?: string | null
+          created_at?: string
+          event_type: string
+          from_status?: string | null
+          id?: string
+          note?: string | null
+          opportunity_id: string
+          practice_id: string
+          snoozed_until?: string | null
+          to_status?: string | null
+        }
+        Update: {
+          actor_user_id?: string
+          contact_outcome?: string | null
+          created_at?: string
+          event_type?: string
+          from_status?: string | null
+          id?: string
+          note?: string | null
+          opportunity_id?: string
+          practice_id?: string
+          snoozed_until?: string | null
+          to_status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "opportunity_activities_opportunity_id_fkey"
+            columns: ["opportunity_id"]
+            isOneToOne: false
+            referencedRelation: "revenue_opportunities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "opportunity_activities_practice_id_fkey"
+            columns: ["practice_id"]
+            isOneToOne: false
+            referencedRelation: "practices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       revenue_opportunities: {
         Row: {
           claim_id: string | null
           completed: boolean
           confidence_score: number | null
+          contact_outcome: string | null
           created_at: string
           estimated_value: number
           id: string
+          last_acted_at: string | null
+          last_actor_user_id: string | null
           opportunity_type: string
           patient_id: string | null
           practice_id: string
           priority: string
           procedure_id: string | null
           reason: string | null
+          recall_id: string | null
           recommended_action: string | null
+          snoozed_until: string | null
           updated_at: string
+          workflow_status: string
         }
         Insert: {
           claim_id?: string | null
           completed?: boolean
           confidence_score?: number | null
+          contact_outcome?: string | null
           created_at?: string
           estimated_value?: number
           id?: string
+          last_acted_at?: string | null
+          last_actor_user_id?: string | null
           opportunity_type: string
           patient_id?: string | null
           practice_id: string
           priority: string
           procedure_id?: string | null
           reason?: string | null
+          recall_id?: string | null
           recommended_action?: string | null
+          snoozed_until?: string | null
           updated_at?: string
+          workflow_status?: string
         }
         Update: {
           claim_id?: string | null
           completed?: boolean
           confidence_score?: number | null
+          contact_outcome?: string | null
           created_at?: string
           estimated_value?: number
           id?: string
+          last_acted_at?: string | null
+          last_actor_user_id?: string | null
           opportunity_type?: string
           patient_id?: string | null
           practice_id?: string
           priority?: string
           procedure_id?: string | null
           reason?: string | null
+          recall_id?: string | null
           recommended_action?: string | null
+          snoozed_until?: string | null
           updated_at?: string
+          workflow_status?: string
         }
         Relationships: [
           {
@@ -942,6 +1017,13 @@ export type Database = {
             columns: ["claim_id"]
             isOneToOne: false
             referencedRelation: "claims"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "revenue_opportunities_recall_id_fkey"
+            columns: ["recall_id"]
+            isOneToOne: false
+            referencedRelation: "recalls"
             referencedColumns: ["id"]
           },
           {
@@ -972,6 +1054,27 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      apply_opportunity_workflow: {
+        Args: {
+          p_clear_snooze?: boolean
+          p_contact_outcome?: string | null
+          p_event_type: string
+          p_note?: string | null
+          p_opportunity_id: string
+          p_practice_id: string
+          p_snoozed_until?: string | null
+          p_to_status?: string | null
+        }
+        Returns: Json
+      }
+      opportunity_workflow_transition_allowed: {
+        Args: {
+          p_from: string
+          p_opportunity_type: string
+          p_to: string
+        }
+        Returns: boolean
+      }
       create_practice_with_owner: {
         Args: {
           p_address?: string

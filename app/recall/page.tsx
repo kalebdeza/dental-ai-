@@ -19,22 +19,14 @@ export default function RecallPage() {
   useEffect(() => {
     async function load() {
       try {
-        // Refresh revenue opportunities from
-        // the current synced Open Dental data.
-        await fetch("/api/revenue-scan");
-
-        // Load recall opportunities.
         const res = await fetch("/api/recall");
         const data = await res.json();
 
         setRecalls(
           Array.isArray(data) ? data : []
         );
-      } catch (err) {
-        console.error(
-          "Failed to load recalls:",
-          err
-        );
+      } catch {
+        console.error("Failed to load recalls.");
       } finally {
         setLoading(false);
       }

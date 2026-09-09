@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import type { Json } from "@/lib/database.types";
+import { logger } from "./logger.ts";
 
 type AuditLogInput = {
   userId?: string | null;
@@ -29,6 +30,8 @@ export async function auditLog({
     });
 
   if (error) {
-    console.error("Audit log failed:", error);
+    logger.error("Audit log failed", {
+      code: error.code,
+    });
   }
 }

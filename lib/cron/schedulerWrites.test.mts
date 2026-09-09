@@ -69,14 +69,15 @@ describe("timestamp stamps", () => {
   });
 });
 
-describe("per-type opportunity replacement", () => {
-  it("inserts before deleting so a failed insert cannot empty the type", async () => {
+describe("per-type opportunity merge", () => {
+  it("does not delete existing rows when a new insert fails", async () => {
     const memory = createMemorySupabase({
       revenue_opportunities: [
         {
           id: "old-claim",
           practice_id: PRACTICE_A,
           opportunity_type: "Claim",
+          procedure_id: "proc-old",
           completed: false,
           priority: "Low",
           estimated_value: 1,
@@ -85,6 +86,7 @@ describe("per-type opportunity replacement", () => {
           id: "done-claim",
           practice_id: PRACTICE_A,
           opportunity_type: "Claim",
+          claim_id: "claim-done",
           completed: true,
           priority: "Low",
           estimated_value: 1,
@@ -93,6 +95,7 @@ describe("per-type opportunity replacement", () => {
           id: "recall",
           practice_id: PRACTICE_A,
           opportunity_type: "Recall",
+          recall_id: "rec-keep",
           completed: false,
           priority: "Low",
           estimated_value: 1,
@@ -101,15 +104,11 @@ describe("per-type opportunity replacement", () => {
     });
 
     const originalFrom = memory.supabase.from.bind(memory.supabase);
-    let inserts = 0;
     memory.supabase.from = ((table: string) => {
       const chain = originalFrom(table);
       const originalInsert = chain.insert.bind(chain);
       chain.insert = (rows: Record<string, unknown>[]) => {
-        inserts += 1;
-        if (inserts === 1) {
-          throw new Error("insert failed");
-        }
+        throw new Error("insert failed");
         return originalInsert(rows);
       };
       return chain;
@@ -122,6 +121,7 @@ describe("per-type opportunity replacement", () => {
         [
           {
             patient_id: "pat-a",
+            procedure_id: "proc-new",
             priority: "High",
             estimated_value: 50,
           },
@@ -143,11 +143,12 @@ describe("per-type opportunity replacement", () => {
     );
   });
 
-  it("pages past 1,000 incomplete opportunity ids and preserves other types and completed rows", async () => {
+  it("pages past 1,000 keyed rows, completes unmatched opens, and preserves other types", async () => {
     const oldClaims = Array.from({ length: 1205 }, (_, index) => ({
       id: `old-claim-${index + 1}`,
       practice_id: PRACTICE_A,
       opportunity_type: "Claim",
+      procedure_id: `proc-old-${index + 1}`,
       completed: false,
       priority: "Low",
       estimated_value: 1,
@@ -160,6 +161,7 @@ describe("per-type opportunity replacement", () => {
           id: "done-claim",
           practice_id: PRACTICE_A,
           opportunity_type: "Claim",
+          claim_id: "claim-done",
           completed: true,
           priority: "Low",
           estimated_value: 1,
@@ -168,6 +170,7 @@ describe("per-type opportunity replacement", () => {
           id: "recall-keep",
           practice_id: PRACTICE_A,
           opportunity_type: "Recall",
+          recall_id: "rec-keep",
           completed: false,
           priority: "Low",
           estimated_value: 1,
@@ -176,6 +179,7 @@ describe("per-type opportunity replacement", () => {
           id: "treatment-keep",
           practice_id: PRACTICE_A,
           opportunity_type: "Treatment",
+          procedure_id: "proc-keep",
           completed: false,
           priority: "Low",
           estimated_value: 1,
@@ -184,6 +188,7 @@ describe("per-type opportunity replacement", () => {
           id: "other-practice",
           practice_id: "practice-b",
           opportunity_type: "Claim",
+          procedure_id: "proc-b",
           completed: false,
           priority: "Low",
           estimated_value: 1,
@@ -197,6 +202,7 @@ describe("per-type opportunity replacement", () => {
       [
         {
           patient_id: "pat-a",
+          procedure_id: "proc-new",
           priority: "High",
           estimated_value: 50,
         },
@@ -214,34 +220,45 @@ describe("per-type opportunity replacement", () => {
       1
     );
     assert.equal(
-      remaining.some((row) => row.id === "done-claim"),
+      remaining.filter((row) => String(row.id).startsWith("old-claim-"))
+        .length,
+      1205
+    );
+    assert.ok(
+      remaining
+        .filter((row) => String(row.id).startsWith("old-claim-"))
+        .every((row) => row.completed === true)
+    );
+    assert.equal(
+      remaining.some((row) => row.id === "done-claim" && row.completed === true),
       true
     );
     assert.equal(
-      remaining.some((row) => row.id === "recall-keep"),
+      remaining.some((row) => row.id === "recall-keep" && row.completed === false),
       true
     );
     assert.equal(
-      remaining.some((row) => row.id === "treatment-keep"),
+      remaining.some(
+        (row) => row.id === "treatment-keep" && row.completed === false
+      ),
       true
     );
     assert.equal(
-      remaining.some((row) => row.id === "other-practice"),
+      remaining.some(
+        (row) => row.id === "other-practice" && row.completed === false
+      ),
       true
-    );
-    assert.equal(
-      remaining.some((row) => String(row.id).startsWith("old-claim-")),
-      false
     );
   });
 
-  it("preserves Claim rows when replacing Recall and Treatment", async () => {
+  it("preserves Claim rows when merging Recall and Treatment", async () => {
     const memory = createMemorySupabase({
       revenue_opportunities: [
         {
           id: "claim-keep",
           practice_id: PRACTICE_A,
           opportunity_type: "Claim",
+          claim_id: "claim-1",
           completed: false,
           priority: "Low",
           estimated_value: 1,
@@ -250,6 +267,7 @@ describe("per-type opportunity replacement", () => {
           id: "recall-old",
           practice_id: PRACTICE_A,
           opportunity_type: "Recall",
+          recall_id: "rec-old",
           completed: false,
           priority: "Low",
           estimated_value: 1,
@@ -258,6 +276,7 @@ describe("per-type opportunity replacement", () => {
           id: "treatment-old",
           practice_id: PRACTICE_A,
           opportunity_type: "Treatment",
+          procedure_id: "proc-old",
           completed: false,
           priority: "Low",
           estimated_value: 1,
@@ -268,26 +287,50 @@ describe("per-type opportunity replacement", () => {
     await replaceOpenOpportunitiesByType(
       contextFrom(memory.supabase as never),
       "Recall",
-      [{ patient_id: "pat-a", priority: "High", estimated_value: 2 }]
+      [
+        {
+          patient_id: "pat-a",
+          recall_id: "rec-new",
+          priority: "High",
+          estimated_value: 2,
+        },
+      ]
     );
     await replaceOpenOpportunitiesByType(
       contextFrom(memory.supabase as never),
       "Treatment",
-      [{ patient_id: "pat-a", priority: "High", estimated_value: 3 }]
+      [
+        {
+          patient_id: "pat-a",
+          procedure_id: "proc-new",
+          priority: "High",
+          estimated_value: 3,
+        },
+      ]
     );
 
     const remaining = memory.tables.revenue_opportunities;
     assert.equal(
-      remaining.some((row) => row.id === "claim-keep"),
+      remaining.some((row) => row.id === "claim-keep" && row.completed === false),
       true
     );
     assert.equal(
-      remaining.some((row) => row.id === "recall-old"),
-      false
+      remaining.some((row) => row.id === "recall-old" && row.completed === true),
+      true
     );
     assert.equal(
-      remaining.some((row) => row.id === "treatment-old"),
-      false
+      remaining.some(
+        (row) => row.id === "treatment-old" && row.completed === true
+      ),
+      true
+    );
+    assert.equal(
+      remaining.some((row) => row.recall_id === "rec-new"),
+      true
+    );
+    assert.equal(
+      remaining.some((row) => row.procedure_id === "proc-new"),
+      true
     );
   });
 });

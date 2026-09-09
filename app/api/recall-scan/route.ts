@@ -7,6 +7,7 @@ import { ApiErrorHandler } from "@/lib/api/errors";
 import { logger } from "@/lib/api/logger";
 import { checkRateLimit } from "@/lib/api/ratelimit";
 import { requirePractice } from "@/lib/auth/requirePractice";
+import { mergeOpportunitiesByType } from "@/lib/cron/mergeOpportunitiesByType";
 
 export async function GET(req: NextRequest) {
   try {
@@ -26,45 +27,18 @@ export async function GET(req: NextRequest) {
 
     const { supabase, practice } = auth;
 
-    const opportunities = await recallScanner.scan(
-      supabase,
-      practice.id
+    const opportunities = await recallScanner.scan(supabase, practice.id);
+
+    const result = await mergeOpportunitiesByType(
+      { supabase, practiceId: practice.id },
+      "Recall",
+      opportunities
     );
-
-    const { error: deleteError } = await supabase
-      .from("revenue_opportunities")
-      .delete()
-      .eq("practice_id", practice.id)
-      .eq("opportunity_type", "Recall");
-
-    if (deleteError) {
-      logger.error(
-        "Failed to delete previous recall opportunities",
-        deleteError
-      );
-
-      return ApiResponse.internal();
-    }
-
-    if (opportunities.length > 0) {
-      const { error: insertError } = await supabase
-        .from("revenue_opportunities")
-        .insert(opportunities);
-
-      if (insertError) {
-        logger.error(
-          "Failed to insert recall opportunities",
-          insertError
-        );
-
-        return ApiResponse.internal();
-      }
-    }
 
     return ApiResponse.ok({
       success: true,
-      count: opportunities.length,
-      opportunities,
+      count: result.created,
+      ...result,
     });
   } catch (error) {
     logger.error("Recall scan failed", error);

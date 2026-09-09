@@ -12,6 +12,7 @@ type OpportunityCardProps = {
   primaryAction: string;
   onPrimaryAction?: () => void;
   onComplete?: () => void;
+  showFooterActions?: boolean;
 };
 
 export default function OpportunityCard({
@@ -26,6 +27,7 @@ export default function OpportunityCard({
   primaryAction,
   onPrimaryAction,
   onComplete,
+  showFooterActions = true,
 }: OpportunityCardProps) {
   const safePatient = patient || "Unknown Patient";
 
@@ -214,45 +216,46 @@ export default function OpportunityCard({
         </p>
       </div>
 
-      {/* Buttons */}
-      <div
-        style={{
-          display: "flex",
-          gap: 16,
-        }}
-      >
-        <button
-          onClick={onPrimaryAction}
+      {showFooterActions ? (
+        <div
           style={{
-            flex: 1,
-            padding: "16px",
-            border: "none",
-            borderRadius: 12,
-            background: "#2563eb",
-            color: "#fff",
-            fontWeight: 700,
-            cursor: "pointer",
+            display: "flex",
+            gap: 16,
           }}
         >
-          {primaryAction}
-        </button>
+          <button
+            onClick={onPrimaryAction}
+            style={{
+              flex: 1,
+              padding: "16px",
+              border: "none",
+              borderRadius: 12,
+              background: "#2563eb",
+              color: "#fff",
+              fontWeight: 700,
+              cursor: "pointer",
+            }}
+          >
+            {primaryAction}
+          </button>
 
-        <button
-          onClick={onComplete}
-          style={{
-            flex: 1,
-            padding: "16px",
-            border: "none",
-            borderRadius: 12,
-            background: "#16a34a",
-            color: "#fff",
-            fontWeight: 700,
-            cursor: "pointer",
-          }}
-        >
-          ✅ Mark Complete
-        </button>
-      </div>
+          <button
+            onClick={onComplete}
+            style={{
+              flex: 1,
+              padding: "16px",
+              border: "none",
+              borderRadius: 12,
+              background: "#16a34a",
+              color: "#fff",
+              fontWeight: 700,
+              cursor: "pointer",
+            }}
+          >
+            ✅ Mark Complete
+          </button>
+        </div>
+      ) : null}
     </div>
   );
 }

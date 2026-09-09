@@ -363,12 +363,11 @@ describe("runSchedulerTreatmentScan", () => {
 
     assert.equal(result.status, "succeeded");
     assert.deepEqual(seenAttaches.sort(), ["1", "3"]);
-    assert.equal(
-      memory.tables.revenue_opportunities.filter(
-        (row) => row.opportunity_type === "Treatment"
-      ).length,
-      3
+    const treatments = memory.tables.revenue_opportunities.filter(
+      (row) => row.opportunity_type === "Treatment"
     );
+    assert.equal(treatments.length, 1);
+    assert.equal(treatments[0]?.procedure_id, "proc-a");
   });
 
   it("fails on a malformed child-endpoint payload", async () => {

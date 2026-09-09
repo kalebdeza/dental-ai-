@@ -27,6 +27,7 @@ export type ClaimOpportunity = {
   confidence_score: number;
   reason: string;
   recommended_action: string;
+  claim_outstanding: boolean;
 };
 
 export function buildClaimOpportunities(
@@ -67,6 +68,7 @@ export function buildClaimOpportunities(
         confidence_score: 70,
         reason: "Completed procedure with no matching insurance claim.",
         recommended_action: "Review and submit the insurance claim.",
+        claim_outstanding: false,
       });
       continue;
     }
@@ -82,6 +84,7 @@ export function buildClaimOpportunities(
         reason:
           "Completed procedure with an insurance claim that has not been submitted.",
         recommended_action: "Review and submit the insurance claim.",
+        claim_outstanding: false,
       });
       continue;
     }
@@ -101,6 +104,7 @@ export function buildClaimOpportunities(
           "Insurance claim has an outstanding balance that may still be recoverable.",
         recommended_action:
           "Review the claim status and follow up on the outstanding insurance balance.",
+        claim_outstanding: true,
       });
     }
   }

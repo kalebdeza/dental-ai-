@@ -61,8 +61,8 @@ export default function ConnectionForm({
       }
 
       onConnected();
-    } catch (error) {
-      console.error(error);
+    } catch {
+      console.error("Unable to connect to Open Dental.");
       alert("Unable to connect to Open Dental.");
     } finally {
       setLoading(false);

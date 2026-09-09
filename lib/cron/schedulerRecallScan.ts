@@ -14,6 +14,7 @@ export async function runSchedulerRecallScan(
 
   try {
     const recalls = await paginateSupabaseQuery<{
+      id: string;
       patient_id: string;
       due_date: string | null;
       completed_date: string | null;
@@ -23,7 +24,7 @@ export async function runSchedulerRecallScan(
       context.supabase
         .from("recalls")
         .select(
-          "patient_id, due_date, completed_date, recall_type, estimated_revenue"
+          "id, patient_id, due_date, completed_date, recall_type, estimated_revenue"
         )
         .eq("practice_id", context.practiceId)
         .eq("integration_id", context.integrationId)

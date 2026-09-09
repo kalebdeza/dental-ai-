@@ -1,5 +1,7 @@
 import { ZodError } from "zod";
-import { ApiResponse } from "./response";
+import { logger } from "./logger.ts";
+import { ApiResponse } from "./response.ts";
+import { safeErrorMeta } from "./safeLog.ts";
 
 export class ApiErrorHandler {
   static handle(error: unknown) {
@@ -9,13 +11,7 @@ export class ApiErrorHandler {
       );
     }
 
-    if (error instanceof Error) {
-      console.error(error);
-
-      return ApiResponse.internal();
-    }
-
-    console.error(error);
+    logger.error("Unhandled API error", safeErrorMeta(error));
 
     return ApiResponse.internal();
   }

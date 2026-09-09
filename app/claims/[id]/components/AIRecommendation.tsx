@@ -1,37 +1,44 @@
-import { Brain } from "lucide-react";
+import { Brain, Sparkles } from "lucide-react";
 
-export default function AIRecommendation() {
+import type { ClaimWithDetails } from "../../../../lib/data/claims";
+import { getClaimNextAction } from "../../../../lib/data/claimWorkflow";
+
+interface Props {
+  claim: ClaimWithDetails;
+}
+
+export default function AIRecommendation({ claim }: Props) {
+  const next = getClaimNextAction(claim, claim.opportunity);
+
   return (
     <div className="rounded-2xl border bg-white p-6 shadow-sm">
-
       <div className="mb-5 flex items-center gap-3">
-
         <Brain className="h-6 w-6 text-blue-600" />
-
-        <h2 className="text-xl font-bold">
-          AI Recommendation
-        </h2>
-
+        <h2 className="text-xl font-bold">{next.title}</h2>
       </div>
 
-      <p className="text-slate-600">
-        This claim appears recoverable.
-      </p>
-
-      <ul className="mt-5 space-y-2 text-slate-700">
-
-        <li>✓ Attach missing X-rays</li>
-
-        <li>✓ Include narrative</li>
-
-        <li>✓ Appeal within 14 days</li>
-
-      </ul>
-
-      <button className="mt-6 rounded-xl bg-blue-600 px-5 py-3 font-medium text-white hover:bg-blue-700">
-        Generate Appeal
-      </button>
-
+      <div className="space-y-4 text-slate-700">
+        <div>
+          <p className="text-sm font-semibold text-slate-500">What should happen next</p>
+          <p className="mt-1">{next.what}</p>
+        </div>
+        <div>
+          <p className="text-sm font-semibold text-slate-500">Why</p>
+          <p className="mt-1">{next.why}</p>
+        </div>
+        <div className="rounded-xl bg-blue-50 p-4">
+          <div className="flex items-center gap-2">
+            <Sparkles className="h-4 w-4 text-blue-600" />
+            <p className="text-sm font-semibold text-blue-800">Recommended action</p>
+          </div>
+          <p className="mt-2 text-blue-900">{next.recommendedAction}</p>
+          <p className="mt-2 text-xs text-blue-700">
+            {next.source === "opportunity"
+              ? "From the stored claim opportunity for this practice."
+              : "From this claim’s current status and balances."}
+          </p>
+        </div>
+      </div>
     </div>
   );
 }

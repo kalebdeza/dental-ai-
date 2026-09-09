@@ -35,7 +35,6 @@ export class RevenueScannerService {
 
     return buildClaimOpportunities(procedures ?? [], claims ?? []).map(
       (opportunity) => ({
-        practice_id: practiceId,
         patient_id: opportunity.patient_id,
         claim_id: opportunity.claim_id,
         procedure_id: opportunity.procedure_id,
@@ -45,7 +44,7 @@ export class RevenueScannerService {
         confidence_score: opportunity.confidence_score,
         reason: opportunity.reason,
         recommended_action: opportunity.recommended_action,
-        completed: false,
+        claim_outstanding: opportunity.claim_outstanding,
       })
     );
   }

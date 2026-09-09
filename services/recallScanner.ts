@@ -8,7 +8,9 @@ export class RecallScannerService {
   ) {
     const { data: recalls, error } = await supabase
       .from("recalls")
-      .select("*")
+      .select(
+        "id, patient_id, due_date, completed_date, recall_type, estimated_revenue"
+      )
       .eq("practice_id", practiceId);
 
     if (error) {
@@ -16,15 +18,14 @@ export class RecallScannerService {
     }
 
     return buildRecallOpportunities(recalls ?? []).map((opportunity) => ({
-      practice_id: practiceId,
       patient_id: opportunity.patient_id,
+      recall_id: opportunity.recall_id,
       opportunity_type: "Recall" as const,
       priority: opportunity.priority,
       estimated_value: opportunity.estimated_value,
       confidence_score: opportunity.confidence_score,
       reason: opportunity.reason,
       recommended_action: opportunity.recommended_action,
-      completed: false,
     }));
   }
 }

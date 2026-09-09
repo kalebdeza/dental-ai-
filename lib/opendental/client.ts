@@ -1,3 +1,4 @@
+import { OpenDentalRequestError } from "./requestError";
 import {
   OPENDENTAL_API,
   DEVELOPER_KEY,
@@ -22,7 +23,7 @@ export async function odFetch(
   );
 
   if (!response.ok) {
-    throw new Error(await response.text());
+    throw new OpenDentalRequestError(response.status);
   }
 
   return response.json();

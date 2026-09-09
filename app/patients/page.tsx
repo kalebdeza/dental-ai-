@@ -16,8 +16,8 @@ export default function PatientsPage() {
 async function loadPatients() {
   try {
     setPatients(await getPatients());
-  } catch (error) {
-    console.error(error);
+  } catch {
+    console.error("Failed to load patients.");
   }
 }
 

@@ -28,10 +28,6 @@ export default function TreatmentPage() {
   useEffect(() => {
     async function load() {
       try {
-        // Refresh opportunities using the
-        // current synced practice data.
-        await fetch("/api/revenue-scan");
-
         const res = await fetch(
           "/api/treatment"
         );
@@ -47,11 +43,8 @@ export default function TreatmentPage() {
         setOpportunities(
           Array.isArray(data) ? data : []
         );
-      } catch (error) {
-        console.error(
-          "Failed to load treatments:",
-          error
-        );
+      } catch {
+        console.error("Failed to load treatments.");
       } finally {
         setLoading(false);
       }

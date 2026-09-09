@@ -90,8 +90,8 @@ useEffect(() => {
       if (result.success) {
         setAiSummary(result.insight);
       }
-    } catch (error) {
-      console.error(error);
+    } catch {
+      console.error("Unable to generate AI analysis.");
       setAiSummary("Unable to generate AI analysis.");
     }
   }

@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 import {
+  formatClaimAmount,
   formatClaimDate,
   formatPatientName,
   formatProcedureName,
@@ -35,6 +36,13 @@ describe("claim display fields", () => {
     assert.equal(
       formatClaimDate("2026-09-03T00:00:00.000Z"),
       new Date("2026-09-03T00:00:00.000Z").toLocaleDateString()
+    );
+  });
+
+  it("formats billed amounts from stored numbers", () => {
+    assert.equal(
+      formatClaimAmount(1200),
+      `$${Number(1200).toLocaleString()}`
     );
   });
 });

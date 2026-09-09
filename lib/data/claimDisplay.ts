@@ -1,10 +1,10 @@
-type NamedPatient = {
+type NamedPerson = {
   first_name: string;
   last_name: string;
 };
 
 export function formatPatientName(
-  patient: NamedPatient | null | undefined
+  patient: NamedPerson | null | undefined
 ): string {
   if (!patient) {
     return "Not available";
@@ -12,6 +12,12 @@ export function formatPatientName(
 
   const name = `${patient.first_name} ${patient.last_name}`.trim();
   return name.length > 0 ? name : "Not available";
+}
+
+export function formatProviderName(
+  provider: NamedPerson | null | undefined
+): string {
+  return formatPatientName(provider);
 }
 
 export function formatProcedureName(
@@ -36,4 +42,14 @@ export function formatClaimDate(value: string | null | undefined): string {
   }
 
   return date.toLocaleDateString();
+}
+
+export function formatClaimAmount(value: number | null | undefined): string {
+  const amount = Number(value ?? 0);
+
+  if (!Number.isFinite(amount)) {
+    return "Not available";
+  }
+
+  return `$${amount.toLocaleString()}`;
 }

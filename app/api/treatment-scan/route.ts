@@ -7,40 +7,7 @@ import { ApiErrorHandler } from "@/lib/api/errors";
 import { logger } from "@/lib/api/logger";
 import { checkRateLimit } from "@/lib/api/ratelimit";
 import { requirePractice } from "@/lib/auth/requirePractice";
-
-import type { SupabaseServerClient } from "@/lib/auth/types";
-
-async function runScan(
-  supabase: SupabaseServerClient,
-  practiceId: string
-) {
-  const opportunities = await treatmentScanner.scan(
-    supabase,
-    practiceId
-  );
-
-  const { error: deleteError } = await supabase
-    .from("revenue_opportunities")
-    .delete()
-    .eq("practice_id", practiceId)
-    .eq("opportunity_type", "Treatment");
-
-  if (deleteError) {
-    throw deleteError;
-  }
-
-  if (opportunities.length > 0) {
-    const { error } = await supabase
-      .from("revenue_opportunities")
-      .insert(opportunities);
-
-    if (error) {
-      throw error;
-    }
-  }
-
-  return opportunities;
-}
+import { mergeOpportunitiesByType } from "@/lib/cron/mergeOpportunitiesByType";
 
 export async function GET(req: NextRequest) {
   try {
@@ -58,15 +25,21 @@ export async function GET(req: NextRequest) {
       return auth.response;
     }
 
-    const opportunities = await runScan(
+    const opportunities = await treatmentScanner.scan(
       auth.supabase,
       auth.practice.id
     );
 
+    const result = await mergeOpportunitiesByType(
+      { supabase: auth.supabase, practiceId: auth.practice.id },
+      "Treatment",
+      opportunities
+    );
+
     return ApiResponse.ok({
       success: true,
-      count: opportunities.length,
-      opportunities,
+      count: result.created,
+      ...result,
     });
   } catch (error) {
     logger.error("Treatment scan failed", error);

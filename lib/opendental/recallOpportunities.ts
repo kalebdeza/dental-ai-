@@ -1,6 +1,7 @@
 import { isRecallComplete } from "./status.ts";
 
 export type RecallOpportunityRow = {
+  id: string;
   patient_id: string;
   due_date: string | null;
   completed_date: string | null;
@@ -10,6 +11,7 @@ export type RecallOpportunityRow = {
 
 export type RecallOpportunity = {
   patient_id: string;
+  recall_id: string;
   priority: string;
   estimated_value: number;
   confidence_score: number;
@@ -25,6 +27,12 @@ export function buildRecallOpportunities(
   const today = now;
 
   for (const recall of recalls) {
+    const recallId = recall.id?.trim();
+
+    if (!recallId) {
+      continue;
+    }
+
     if (!recall.due_date) {
       continue;
     }
@@ -59,6 +67,7 @@ export function buildRecallOpportunities(
 
     opportunities.push({
       patient_id: recall.patient_id,
+      recall_id: recallId,
       priority,
       estimated_value: estimatedValue,
       confidence_score: 95,

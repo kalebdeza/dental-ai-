@@ -52,6 +52,7 @@ describe("recall opportunities", () => {
     const opportunities = buildRecallOpportunities(
       [
         {
+          id: "rec-1",
           patient_id: "pat-1",
           due_date: "2020-01-01",
           completed_date: null,
@@ -64,6 +65,37 @@ describe("recall opportunities", () => {
 
     assert.equal(opportunities.length, 1);
     assert.equal(opportunities[0]?.patient_id, "pat-1");
+    assert.equal(opportunities[0]?.recall_id, "rec-1");
+  });
+
+  it("keeps separate opportunities for two overdue recalls on one patient", () => {
+    const opportunities = buildRecallOpportunities(
+      [
+        {
+          id: "rec-1",
+          patient_id: "pat-1",
+          due_date: "2020-01-01",
+          completed_date: null,
+          recall_type: "Hygiene",
+          estimated_revenue: 250,
+        },
+        {
+          id: "rec-2",
+          patient_id: "pat-1",
+          due_date: "2019-01-01",
+          completed_date: null,
+          recall_type: "Perio",
+          estimated_revenue: 180,
+        },
+      ],
+      new Date("2026-01-01")
+    );
+
+    assert.equal(opportunities.length, 2);
+    assert.deepEqual(
+      opportunities.map((item) => item.recall_id).sort(),
+      ["rec-1", "rec-2"]
+    );
   });
 });
 
@@ -124,6 +156,7 @@ describe("scheduler scanners", () => {
           id: "claim-old",
           practice_id: PRACTICE_A,
           opportunity_type: "Claim",
+          procedure_id: "proc-old",
           completed: false,
           priority: "Low",
           estimated_value: 1,
@@ -162,8 +195,10 @@ describe("scheduler scanners", () => {
     assert.equal(result.status, "succeeded");
     const remaining = memory.tables.revenue_opportunities;
     assert.equal(
-      remaining.some((row) => row.id === "claim-old"),
-      false
+      remaining.some(
+        (row) => row.id === "claim-old" && row.completed === true
+      ),
+      true
     );
     assert.equal(
       remaining.some((row) => row.id === "claim-done"),
@@ -252,7 +287,9 @@ describe("scheduler scanners", () => {
     assert.equal(
       remaining.some(
         (row) =>
-          row.opportunity_type === "Recall" && row.patient_id === "pat-a"
+          row.opportunity_type === "Recall" &&
+          row.patient_id === "pat-a" &&
+          row.recall_id === "rec-a"
       ),
       true
     );

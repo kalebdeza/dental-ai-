@@ -2,6 +2,7 @@ import { ApiResponse } from "@/lib/api/response";
 import { ApiErrorHandler } from "@/lib/api/errors";
 import { logger } from "@/lib/api/logger";
 import { requirePractice } from "@/lib/auth/requirePractice";
+import { isActiveQueueOpportunity } from "@/lib/data/opportunityWorkflow";
 
 export async function GET() {
   try {
@@ -29,9 +30,13 @@ export async function GET() {
       throw error;
     }
 
+    const now = new Date();
     const results = [];
 
     for (const opportunity of opportunities ?? []) {
+      if (!isActiveQueueOpportunity(opportunity, now)) {
+        continue;
+      }
       let patientName = "Unknown Patient";
 
       if (opportunity.patient_id) {

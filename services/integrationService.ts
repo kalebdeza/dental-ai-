@@ -1,5 +1,8 @@
+import "server-only";
+
 import { encrypt, decrypt } from "@/lib/security/encryption";
 import { createClient } from "@/lib/supabase/server";
+import { createSchedulerClient } from "@/lib/supabase/scheduler";
 
 class IntegrationService {
   async saveOpenDentalCredentials(
@@ -33,7 +36,8 @@ class IntegrationService {
           status: "connected",
           updated_at: new Date().toISOString(),
         })
-        .eq("id", existing.id);
+        .eq("id", existing.id)
+        .select("id");
 
       if (error) {
         throw error;
@@ -50,7 +54,8 @@ class IntegrationService {
         provider: "opendental",
         customer_key: encryptedKey,
         status: "connected",
-      });
+      })
+      .select("id");
 
     if (error) {
       throw error;
@@ -63,43 +68,48 @@ class IntegrationService {
     id: string;
     customerKey: string;
   }> {
-    const supabase = await createClient();
+    const userClient = await createClient();
 
-    const { data: integration, error } =
-      await supabase
-        .from("integrations")
-        .select("id,customer_key,status")
-        .eq("practice_id", practiceId)
-        .eq("provider", "opendental")
-        .maybeSingle();
+    const { data: visible, error: visibleError } = await userClient
+      .from("integrations")
+      .select("id,status")
+      .eq("practice_id", practiceId)
+      .eq("provider", "opendental")
+      .maybeSingle();
+
+    if (visibleError) {
+      throw visibleError;
+    }
+
+    if (!visible) {
+      throw new Error("Open Dental integration not found.");
+    }
+
+    if (visible.status !== "connected") {
+      throw new Error("Open Dental integration is not connected.");
+    }
+
+    const supabase = createSchedulerClient();
+
+    const { data: integration, error } = await supabase
+      .from("integrations")
+      .select("id,customer_key,status")
+      .eq("id", visible.id)
+      .eq("practice_id", practiceId)
+      .eq("provider", "opendental")
+      .maybeSingle();
 
     if (error) {
       throw error;
     }
 
-    if (!integration) {
-      throw new Error(
-        "Open Dental integration not found."
-      );
-    }
-
-    if (!integration.customer_key) {
-      throw new Error(
-        "Open Dental customer key is missing."
-      );
-    }
-
-    if (integration.status !== "connected") {
-      throw new Error(
-        "Open Dental integration is not connected."
-      );
+    if (!integration?.customer_key || integration.status !== "connected") {
+      throw new Error("Open Dental customer key is missing.");
     }
 
     return {
       id: integration.id,
-      customerKey: decrypt(
-        integration.customer_key
-      ),
+      customerKey: decrypt(integration.customer_key),
     };
   }
 }

@@ -1,5 +1,6 @@
 import { env } from "@/lib/api/env";
 import { withTimeout } from "@/lib/api/timeout";
+import { OpenDentalRequestError } from "@/lib/opendental/requestError";
 
 import type {
   OpenDentalClaimStatus,
@@ -137,11 +138,10 @@ export type OpenDentalProcTP = {
 type TestConnectionResult =
   | {
       success: true;
-      clinic: unknown;
     }
   | {
       success: false;
-      message: string;
+      status: number | null;
     };
 
 type OpenDentalRequestOptions = {
@@ -206,12 +206,7 @@ export class OpenDentalService {
     );
 
     if (!response.ok) {
-      const errorText =
-        await response.text();
-
-      throw new Error(
-        `Open Dental API ${response.status}: ${errorText}`
-      );
+      throw new OpenDentalRequestError(response.status);
     }
 
     return response.json() as Promise<T>;
@@ -264,23 +259,21 @@ export class OpenDentalService {
     customerKey: string
   ): Promise<TestConnectionResult> {
     try {
-      const clinics =
-        await this.request<unknown[]>(
-          customerKey,
-          "/clinics"
-        );
+      await this.request<unknown[]>(
+        customerKey,
+        "/clinics"
+      );
 
       return {
         success: true,
-        clinic: clinics[0] ?? null,
       };
     } catch (error) {
       return {
         success: false,
-        message:
-          error instanceof Error
-            ? error.message
-            : "Unable to connect to Open Dental.",
+        status:
+          error instanceof OpenDentalRequestError
+            ? error.status
+            : null,
       };
     }
   }

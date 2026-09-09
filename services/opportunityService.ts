@@ -1,59 +1,59 @@
 import type { SupabaseServerClient } from "@/lib/auth/types";
+import {
+  isSchedulerOpportunityType,
+  mergeOpportunitiesByType,
+  type MergeCandidate,
+  type SchedulerOpportunityType,
+} from "@/lib/cron/mergeOpportunitiesByType";
 
-type Opportunity = {
-  practice_id: string;
-  patient_id?: string | null;
-  claim_id?: string | null;
-  procedure_id?: string | null;
+export type OpportunityCandidate = MergeCandidate & {
   opportunity_type: string;
-  priority: string;
-  estimated_value: number;
-  confidence_score?: number | null;
-  reason?: string | null;
-  recommended_action?: string | null;
-  completed: boolean;
 };
 
 export class OpportunityService {
   async replaceOpenOpportunities(
     supabase: SupabaseServerClient,
     practiceId: string,
-    opportunities: Opportunity[]
+    opportunities: OpportunityCandidate[]
   ) {
-    // Remove existing incomplete opportunities for this practice.
-    //
-    // We regenerate these from the current Open Dental data,
-    // so this prevents stale opportunities from accumulating.
-    const { error: deleteError } = await supabase
-      .from("revenue_opportunities")
-      .delete()
-      .eq("practice_id", practiceId)
-      .eq("completed", false);
+    const byType: Record<SchedulerOpportunityType, MergeCandidate[]> = {
+      Claim: [],
+      Recall: [],
+      Treatment: [],
+    };
 
-    if (deleteError) {
-      throw deleteError;
+    for (const opportunity of opportunities) {
+      if (!isSchedulerOpportunityType(opportunity.opportunity_type)) {
+        continue;
+      }
+
+      byType[opportunity.opportunity_type].push(opportunity);
     }
 
-    if (opportunities.length === 0) {
-      return {
-        created: 0,
-      };
-    }
+    let created = 0;
+    let updated = 0;
+    let completed = 0;
+    let droppedUnkeyed = 0;
 
-    const { data, error } = await supabase
-      .from("revenue_opportunities")
-      .insert(opportunities)
-      .select("id");
-
-    if (error) {
-      throw error;
+    for (const opportunityType of ["Claim", "Recall", "Treatment"] as const) {
+      const result = await mergeOpportunitiesByType(
+        { supabase, practiceId },
+        opportunityType,
+        byType[opportunityType]
+      );
+      created += result.created;
+      updated += result.updated;
+      completed += result.completed;
+      droppedUnkeyed += result.droppedUnkeyed;
     }
 
     return {
-      created: data?.length ?? 0,
+      created,
+      updated,
+      completed,
+      droppedUnkeyed,
     };
   }
 }
 
-export const opportunityService =
-  new OpportunityService();
+export const opportunityService = new OpportunityService();

@@ -48,10 +48,10 @@ export async function POST(req: NextRequest) {
 
       logger.warn("Open Dental connection failed", {
         practiceId: practice.id,
-        reason: result.message,
+        code: result.status ?? "unknown",
       });
 
-      return ApiResponse.badRequest(result.message);
+      return ApiResponse.badRequest("Open Dental connection test failed.");
     }
 
     await integrationService.saveOpenDentalCredentials(
@@ -72,7 +72,6 @@ export async function POST(req: NextRequest) {
 
     return ApiResponse.ok({
       success: true,
-      clinic: result.clinic,
       message: "Open Dental connected successfully.",
     });
   } catch (error) {

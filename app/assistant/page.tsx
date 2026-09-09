@@ -52,8 +52,8 @@ export default function AssistantPage() {
           content: data.reply,
         },
       ]);
-    } catch (error) {
-      console.error(error);
+    } catch {
+      console.error("AI assistant request failed.");
 
       setMessages((prev) => [
         ...prev,

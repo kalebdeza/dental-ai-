@@ -40,6 +40,10 @@ export default function ClaimHero({ claim }: ClaimHeroProps) {
             Claim #{claim.claim_number ?? "Not available"}
           </p>
 
+          <p className="mt-3 inline-flex rounded-full bg-white/15 px-3 py-1 text-sm">
+            {claim.status}
+          </p>
+
         </div>
 
       </div>

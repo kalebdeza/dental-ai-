@@ -19,10 +19,9 @@ export default function ClaimsPage() {
   async function loadClaims() {
     try {
       const data = await getClaims();
-      console.log("Claims:", data);
       setClaims(data);
-    } catch (error) {
-      console.error("Error loading claims:", error);
+    } catch {
+      console.error("Failed to load claims.");
     }
   }
 

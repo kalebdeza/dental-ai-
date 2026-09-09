@@ -1,3 +1,5 @@
+import { sanitizeLogMeta } from "./safeLog.ts";
+
 type LogLevel = "info" | "warn" | "error";
 
 class Logger {
@@ -6,7 +8,7 @@ class Logger {
       timestamp: new Date().toISOString(),
       level,
       message,
-      meta,
+      meta: sanitizeLogMeta(meta),
     };
 
     switch (level) {
