@@ -1,6 +1,7 @@
 import { env } from "@/lib/api/env";
 import { withTimeout } from "@/lib/api/timeout";
 import { OpenDentalRequestError } from "@/lib/opendental/requestError";
+import type { OpenDentalClaimProc } from "@/lib/opendental/claimProc";
 
 import type {
   OpenDentalClaimStatus,
@@ -61,14 +62,7 @@ export type OpenDentalClaim = {
   InsPayAmt?: number;
 };
 
-export type OpenDentalClaimProc = {
-  ClaimProcNum: number;
-  ClaimNum: number;
-  PatNum: number;
-  ProcNum?: number;
-  InsPayEst?: number;
-  InsPayAmt?: number;
-};
+export type { OpenDentalClaimProc };
 
 export type OpenDentalRecall = {
   RecallNum: number;

@@ -257,4 +257,56 @@ describe("scheduler Open Dental sync", () => {
     assert.equal(result.status, "failed");
     assert.equal(memory.tables.integrations[0]?.last_sync_at, null);
   });
+
+  it("keeps the Open Dental sync successful when /claimprocs fails", async () => {
+    const memory = createMemorySupabase({
+      integrations: [
+        {
+          id: INTEGRATION_A,
+          practice_id: PRACTICE_A,
+          last_sync_at: null,
+        },
+      ],
+      opendental_claimprocs: [
+        {
+          id: "cp-1",
+          practice_id: PRACTICE_A,
+          integration_id: INTEGRATION_A,
+          source_claimproc_id: 1984257,
+          status: "Received",
+          absent_from_sync_at: null,
+        },
+      ],
+    });
+    const fetchImpl: typeof fetch = async (input) => {
+      const path = new URL(String(input)).pathname;
+
+      if (path === "/claimprocs") {
+        return new Response("nope", { status: 503 });
+      }
+
+      return new Response(JSON.stringify([]), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      });
+    };
+    const client = createSchedulerOpenDentalClientFromConfig({
+      customerKey: "key",
+      apiUrl: "https://od.example.test",
+      developerKey: "dev",
+      fetchImpl,
+      sleep: async () => undefined,
+    });
+
+    const result = await runSchedulerOpenDentalSync(
+      contextFrom(memory.supabase as never),
+      client
+    );
+
+    assert.equal(result.status, "succeeded");
+    assert.equal(
+      memory.tables.opendental_claimprocs[0]?.absent_from_sync_at,
+      null
+    );
+  });
 });

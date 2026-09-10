@@ -73,6 +73,51 @@ export default function ClaimSummary({ claim }: Props) {
         <Row label="Paid" value={formatClaimDate(claim.paid_at)} />
       </div>
 
+      {claim.recovery?.state && claim.recovery.state !== "none" ? (
+        <div className="mt-6 rounded-xl border border-emerald-100 bg-emerald-50 p-4">
+          <p className="text-sm font-semibold text-emerald-800">
+            {claim.recovery.state === "partial"
+              ? "Partially recovered"
+              : "Recovered"}
+          </p>
+          <p className="mt-1 text-sm text-emerald-900">
+            {claim.recovery.disclaimer}
+          </p>
+          <div className="mt-3 space-y-2 text-sm">
+            <Row
+              label="Recovered"
+              value={formatClaimAmount(claim.recovery.creditedAmount)}
+            />
+            <Row
+              label={claim.recovery.paymentPostedLabel}
+              value={
+                claim.recovery.paymentPostedOn
+                  ? formatClaimDate(
+                      `${claim.recovery.paymentPostedOn}T00:00:00.000Z`
+                    )
+                  : "Not available"
+              }
+            />
+            {claim.recovery.state === "partial" ? (
+              <>
+                <Row
+                  label="Identified amount"
+                  value={formatClaimAmount(
+                    claim.recovery.identifiedEstimatedValue
+                  )}
+                />
+                <Row
+                  label="Remaining opportunity amount"
+                  value={formatClaimAmount(
+                    claim.recovery.remainingOpportunityAmount
+                  )}
+                />
+              </>
+            ) : null}
+          </div>
+        </div>
+      ) : null}
+
       {claim.denial_reason?.trim() ? (
         <div className="mt-6 rounded-xl border border-red-100 bg-red-50 p-4">
           <p className="text-sm font-semibold text-red-700">Denial reason</p>

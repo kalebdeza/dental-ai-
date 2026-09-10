@@ -5,6 +5,7 @@ import {
   type SchedulerPracticeContext,
 } from "./schedulerContext.ts";
 import type { SchedulerOpenDentalClient } from "./opendental/clientFactory.ts";
+import { runSchedulerClaimProcSync } from "./schedulerClaimProcSync.ts";
 import {
   mapClaimRow,
   mapPatientRow,
@@ -269,6 +270,11 @@ export async function runSchedulerOpenDentalSync(
         throw new Error(result.error);
       }
     });
+
+    // ClaimProc failures must not fail patient/claim upserts or skip
+    // claim/recall/treatment scans. Absence and attribution only run
+    // inside a successful ClaimProc sync.
+    await runSchedulerClaimProcSync(context, client);
 
     return { status: "succeeded", skipped };
   } catch {

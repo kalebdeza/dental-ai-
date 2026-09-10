@@ -887,6 +887,105 @@ export type Database = {
           },
         ]
       }
+      opendental_claimprocs: {
+        Row: {
+          absent_from_sync_at: string | null
+          claim_adj_reason_codes: string | null
+          claim_payment_num: number | null
+          copay_amt: number | null
+          created_at: string
+          date_cp: string | null
+          date_entry: string | null
+          ded_applied: number | null
+          fee_billed: number | null
+          id: string
+          ins_pay_amt: number
+          ins_pay_est: number
+          integration_id: string
+          is_overpay: boolean | null
+          is_transfer: boolean | null
+          last_synced_at: string
+          practice_id: string
+          proc_date: string | null
+          source_claim_id: number | null
+          source_claimproc_id: number
+          source_patient_id: number | null
+          source_procedure_id: number | null
+          status: string
+          updated_at: string
+          write_off: number
+        }
+        Insert: {
+          absent_from_sync_at?: string | null
+          claim_adj_reason_codes?: string | null
+          claim_payment_num?: number | null
+          copay_amt?: number | null
+          created_at?: string
+          date_cp?: string | null
+          date_entry?: string | null
+          ded_applied?: number | null
+          fee_billed?: number | null
+          id?: string
+          ins_pay_amt?: number
+          ins_pay_est?: number
+          integration_id: string
+          is_overpay?: boolean | null
+          is_transfer?: boolean | null
+          last_synced_at?: string
+          practice_id: string
+          proc_date?: string | null
+          source_claim_id?: number | null
+          source_claimproc_id: number
+          source_patient_id?: number | null
+          source_procedure_id?: number | null
+          status: string
+          updated_at?: string
+          write_off?: number
+        }
+        Update: {
+          absent_from_sync_at?: string | null
+          claim_adj_reason_codes?: string | null
+          claim_payment_num?: number | null
+          copay_amt?: number | null
+          created_at?: string
+          date_cp?: string | null
+          date_entry?: string | null
+          ded_applied?: number | null
+          fee_billed?: number | null
+          id?: string
+          ins_pay_amt?: number
+          ins_pay_est?: number
+          integration_id?: string
+          is_overpay?: boolean | null
+          is_transfer?: boolean | null
+          last_synced_at?: string
+          practice_id?: string
+          proc_date?: string | null
+          source_claim_id?: number | null
+          source_claimproc_id?: number
+          source_patient_id?: number | null
+          source_procedure_id?: number | null
+          status?: string
+          updated_at?: string
+          write_off?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "opendental_claimprocs_integration_id_fkey"
+            columns: ["integration_id"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "opendental_claimprocs_practice_id_fkey"
+            columns: ["practice_id"]
+            isOneToOne: false
+            referencedRelation: "practices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       opportunity_activities: {
         Row: {
           actor_user_id: string
@@ -937,6 +1036,136 @@ export type Database = {
           },
           {
             foreignKeyName: "opportunity_activities_practice_id_fkey"
+            columns: ["practice_id"]
+            isOneToOne: false
+            referencedRelation: "practices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      opportunity_payment_attribution_events: {
+        Row: {
+          attribution_id: string
+          claimproc_id: string
+          created_at: string
+          credited_amount: number
+          event_type: string
+          id: string
+          opportunity_id: string
+          practice_id: string
+          previous_credited_amount: number | null
+          reason: string | null
+          source_claimproc_id: number
+        }
+        Insert: {
+          attribution_id: string
+          claimproc_id: string
+          created_at?: string
+          credited_amount: number
+          event_type: string
+          id?: string
+          opportunity_id: string
+          practice_id: string
+          previous_credited_amount?: number | null
+          reason?: string | null
+          source_claimproc_id: number
+        }
+        Update: {
+          attribution_id?: string
+          claimproc_id?: string
+          created_at?: string
+          credited_amount?: number
+          event_type?: string
+          id?: string
+          opportunity_id?: string
+          practice_id?: string
+          previous_credited_amount?: number | null
+          reason?: string | null
+          source_claimproc_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "opportunity_payment_attribution_events_attribution_id_fkey"
+            columns: ["attribution_id"]
+            isOneToOne: false
+            referencedRelation: "opportunity_payment_attributions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "opportunity_payment_attribution_events_practice_id_fkey"
+            columns: ["practice_id"]
+            isOneToOne: false
+            referencedRelation: "practices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      opportunity_payment_attributions: {
+        Row: {
+          cap_snapshot: number
+          claimproc_id: string
+          created_at: string
+          credited_amount: number
+          id: string
+          identified_at_snapshot: string
+          opportunity_id: string
+          payment_dated_at: string
+          practice_id: string
+          reversal_reason: string | null
+          reversed_at: string | null
+          source_claimproc_id: number
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          cap_snapshot: number
+          claimproc_id: string
+          created_at?: string
+          credited_amount?: number
+          id?: string
+          identified_at_snapshot: string
+          opportunity_id: string
+          payment_dated_at: string
+          practice_id: string
+          reversal_reason?: string | null
+          reversed_at?: string | null
+          source_claimproc_id: number
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          cap_snapshot?: number
+          claimproc_id?: string
+          created_at?: string
+          credited_amount?: number
+          id?: string
+          identified_at_snapshot?: string
+          opportunity_id?: string
+          payment_dated_at?: string
+          practice_id?: string
+          reversal_reason?: string | null
+          reversed_at?: string | null
+          source_claimproc_id?: number
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "opportunity_payment_attributions_claimproc_id_fkey"
+            columns: ["claimproc_id"]
+            isOneToOne: false
+            referencedRelation: "opendental_claimprocs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "opportunity_payment_attributions_opportunity_id_fkey"
+            columns: ["opportunity_id"]
+            isOneToOne: false
+            referencedRelation: "revenue_opportunities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "opportunity_payment_attributions_practice_id_fkey"
             columns: ["practice_id"]
             isOneToOne: false
             referencedRelation: "practices"

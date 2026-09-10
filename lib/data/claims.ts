@@ -3,6 +3,13 @@ import type { Tables } from "../database.types";
 
 import { resolveSolePracticeId } from "./resolvePracticeId";
 import type { OpportunityActivityRow } from "./opportunityWorkflow";
+import type { ClaimRecoverySummary } from "./recoveredRevenue";
+import {
+  emptyClaimRecovery,
+  loadOpportunityRecoverySummary,
+} from "./recoveredRevenue";
+
+export type { ClaimRecoverySummary };
 
 export type Claim = Tables<"claims">;
 export type Patient = Tables<"patients">;
@@ -22,6 +29,7 @@ export type ClaimOpportunitySummary = {
   completed: boolean;
   workflow_status: string;
   snoozed_until: string | null;
+  identified_estimated_value?: number;
 };
 
 export interface ClaimWithDetails extends Claim {
@@ -29,6 +37,7 @@ export interface ClaimWithDetails extends Claim {
   provider: Provider | null;
   opportunity: ClaimOpportunitySummary | null;
   activities: OpportunityActivityRow[];
+  recovery: ClaimRecoverySummary;
 }
 
 export async function getClaims(): Promise<Claim[]> {
@@ -110,7 +119,7 @@ export async function loadPracticeClaimWithDetails(
       client
         .from("revenue_opportunities")
         .select(
-          "id, reason, recommended_action, estimated_value, priority, completed, workflow_status, snoozed_until"
+          "id, reason, recommended_action, estimated_value, identified_estimated_value, priority, completed, workflow_status, snoozed_until"
         )
         .eq("practice_id", practiceId)
         .eq("claim_id", claim.id)
@@ -125,6 +134,7 @@ export async function loadPracticeClaimWithDetails(
         reason: opportunities[0].reason,
         recommended_action: opportunities[0].recommended_action,
         estimated_value: opportunities[0].estimated_value,
+        identified_estimated_value: opportunities[0].identified_estimated_value,
         priority: opportunities[0].priority,
         completed: opportunities[0].completed,
         workflow_status: opportunities[0].workflow_status,
@@ -146,12 +156,22 @@ export async function loadPracticeClaimWithDetails(
     activities = activityRows ?? [];
   }
 
+  const recovery = await loadOpportunityRecoverySummary(
+    client,
+    practiceId,
+    opportunity?.id ?? null,
+    Number(opportunity?.identified_estimated_value ?? 0)
+  );
+
   return {
     ...claim,
     patient: patient ?? null,
     provider: provider ?? null,
     opportunity,
     activities,
+    recovery: opportunity
+      ? recovery
+      : emptyClaimRecovery(null, 0),
   };
 }
 

@@ -13,6 +13,7 @@ import {
   type ClaimOpportunitySummary,
   type ClaimWorkflowBucket,
 } from "./claimWorkflow.ts";
+import type { ClaimRecoverySummary } from "./recoveredRevenue.ts";
 
 type Claim = Tables<"claims">;
 type Patient = Tables<"patients">;
@@ -37,6 +38,7 @@ export type ClaimAssistantInput = {
   patient?: Patient | null;
   provider?: Provider | null;
   opportunity?: ClaimOpportunitySummary | null;
+  recovery?: ClaimRecoverySummary | null;
   now?: Date;
 };
 
@@ -374,6 +376,10 @@ export function buildClaimAssistantView(
 ): ClaimAssistantView {
   const now = input.now ?? new Date();
   const bucket = getClaimWorkflowBucket(input.claim, now);
+  const attributed =
+    Number(input.recovery?.creditedAmount ?? 0) > 0
+      ? input.recovery
+      : null;
   const isSynthetic = looksLikeSyntheticTestData(syntheticValues(input));
   const syntheticNotice = isSynthetic ? SYNTHETIC_TEST_NOTICE : null;
   const fields = listClaimFieldChecks(input);
@@ -392,6 +398,34 @@ export function buildClaimAssistantView(
     readiness: null as ClaimAssistantView["readiness"],
     disclaimer: null as string | null,
   };
+
+  if (attributed) {
+    const identified = formatClaimAmount(attributed.identifiedEstimatedValue);
+    const recovered = formatClaimAmount(attributed.creditedAmount);
+    const remaining = formatClaimAmount(attributed.remainingOpportunityAmount);
+    const posted = attributed.paymentPostedOn
+      ? formatClaimDate(`${attributed.paymentPostedOn}T00:00:00.000Z`)
+      : "Not available";
+
+    return {
+      ...base,
+      title:
+        attributed.state === "partial"
+          ? "Partially recovered"
+          : "Payment attributed",
+      recommendedNextStep: isSynthetic
+        ? syntheticNextStep
+        : attributed.disclaimer,
+      why: attributed.disclaimer,
+      facts: [
+        { label: "Identified amount", value: identified },
+        { label: "Recovered", value: recovered },
+        { label: "Remaining opportunity amount", value: remaining },
+        { label: attributed.paymentPostedLabel, value: posted },
+      ],
+      disclaimer: attributed.disclaimer,
+    };
+  }
 
   if (bucket === "draft") {
     const readiness = getClaimSubmissionReadiness(input);

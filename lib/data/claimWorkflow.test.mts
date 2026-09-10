@@ -191,4 +191,13 @@ describe("claim next action and timeline", () => {
     assert.doesNotMatch(text, /app contacted/i);
     assert.doesNotMatch(text, /submitted for you/i);
   });
+
+  it("hides submission actions when insurance payment is attributed", () => {
+    const labels = getClaimWorkflowActions(claim(), undefined, new Date(), {
+      creditedAmount: 40,
+    }).map((item) => item.label);
+    assert.equal(labels.includes("Submit in PMS"), false);
+    assert.equal(labels.includes("Generate Narrative"), false);
+    assert.ok(labels.includes("Add Note"));
+  });
 });

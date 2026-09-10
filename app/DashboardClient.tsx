@@ -9,7 +9,9 @@ import OpportunityChart from "./components/OpportunityChart";
 import AIInsights from "./components/AIInsights";
 import AIRevenueBrief from "./components/AIRevenueBrief";
 import RevenueRecoveryFunnel from "./components/RevenueRecoveryFunnel";
+import RecoveredRevenuePanel from "./components/RecoveredRevenuePanel";
 import type { OpportunityFunnelMetrics } from "@/lib/data/opportunityFunnel";
+import type { RecoveredRevenueDetail } from "@/lib/data/recoveredRevenue";
 
 type DashboardData = {
   totalRecoverableRevenue: number;
@@ -23,6 +25,8 @@ type DashboardData = {
 
   totalPatients: number;
   funnel: OpportunityFunnelMetrics;
+  recoveredRevenue: number;
+  recoveredPayments: RecoveredRevenueDetail[];
 
   priorityPatients: {
     opportunityId: string;
@@ -47,7 +51,9 @@ function isDashboardData(value: unknown): value is DashboardData {
     typeof candidate.recallRevenue === "number" &&
     typeof candidate.treatmentRevenue === "number" &&
     Array.isArray(candidate.priorityPatients) &&
-    isFunnelMetrics(candidate.funnel)
+    isFunnelMetrics(candidate.funnel) &&
+    typeof candidate.recoveredRevenue === "number" &&
+    Array.isArray(candidate.recoveredPayments)
   );
 }
 
@@ -338,6 +344,10 @@ export default function DashboardClient() {
       </div>
 
       <RevenueRecoveryFunnel funnel={data.funnel} />
+      <RecoveredRevenuePanel
+        recoveredRevenue={data.recoveredRevenue}
+        details={data.recoveredPayments}
+      />
 
       {/* Charts */}
 

@@ -1,5 +1,6 @@
 import { collectOpenDentalPages, paginateOpenDental } from "./fetchPages.ts";
 import type { SchedulerOpenDentalRequest } from "./fetchPages.ts";
+import type { OpenDentalClaimProc } from "../../opendental/claimProc.ts";
 import type {
   OpenDentalClaim,
   OpenDentalPatient,
@@ -27,6 +28,10 @@ export type SchedulerOpenDentalClient = {
   ) => Promise<{ pages: number; records: number }>;
   forEachRecallPage: (
     onPage: (page: OpenDentalRecall[]) => Promise<void>
+  ) => Promise<{ pages: number; records: number }>;
+  forEachClaimProcPage: (
+    onPage: (page: OpenDentalClaimProc[]) => Promise<void>,
+    status?: string
   ) => Promise<{ pages: number; records: number }>;
   listTreatPlans: () => Promise<OpenDentalTreatPlan[]>;
   listTreatPlanAttaches: (
@@ -75,6 +80,15 @@ export function createSchedulerOpenDentalClientFromConfig(
 
     forEachRecallPage(onPage) {
       return paginateOpenDental(config, "/recalls", onPage);
+    },
+
+    forEachClaimProcPage(onPage, status) {
+      return paginateOpenDental(
+        config,
+        "/claimprocs",
+        onPage,
+        status ? { Status: status } : undefined
+      );
     },
 
     listTreatPlans() {

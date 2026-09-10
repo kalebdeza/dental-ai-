@@ -51,6 +51,8 @@ export type OpenDentalClaim = {
   InsPayAmt?: number;
 };
 
+export type { OpenDentalClaimProc } from "../../opendental/claimProc.ts";
+
 export type OpenDentalRecall = {
   RecallNum: number;
   PatNum: number;

@@ -43,6 +43,13 @@ export default function ClaimHero({ claim }: ClaimHeroProps) {
           <p className="mt-3 inline-flex rounded-full bg-white/15 px-3 py-1 text-sm">
             {claim.status}
           </p>
+          {claim.recovery?.state && claim.recovery.state !== "none" ? (
+            <p className="ml-2 mt-3 inline-flex rounded-full bg-emerald-400/20 px-3 py-1 text-sm text-emerald-100">
+              {claim.recovery.state === "partial"
+                ? "Partially recovered"
+                : "Payment attributed"}
+            </p>
+          ) : null}
 
         </div>
 

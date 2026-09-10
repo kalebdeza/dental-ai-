@@ -37,6 +37,7 @@ export default function AIClaimCopilot({
 }: Props) {
   const remaining = Number(claim.remaining_balance);
   const bucket = getClaimWorkflowBucket(claim);
+  const attributed = Number(claim.recovery?.creditedAmount ?? 0) > 0;
   const [copied, setCopied] = useState<string | null>(null);
 
   function copyText(value: string, key: string) {
@@ -44,8 +45,9 @@ export default function AIClaimCopilot({
     setCopied(key);
   }
 
-  const showNarrative = bucket === "draft" || bucket === "denied";
-  const showSupportingNotes = bucket === "draft";
+  const showNarrative =
+    !attributed && (bucket === "draft" || bucket === "denied");
+  const showSupportingNotes = !attributed && bucket === "draft";
   const letter = generatedLetter.trim();
   const hasAiActions = showNarrative || showSupportingNotes;
   const hasGeneratedOutput = Boolean(narrative || supportingNotes || letter);

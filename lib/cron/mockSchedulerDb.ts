@@ -44,6 +44,9 @@ export function createMemorySupabase(seed: Record<string, Row[]> = {}) {
     claims: [],
     recalls: [],
     revenue_opportunities: [],
+    opendental_claimprocs: [],
+    opportunity_payment_attributions: [],
+    opportunity_payment_attribution_events: [],
   };
 
   for (const [table, rows] of Object.entries(seed)) {
@@ -87,8 +90,8 @@ export function createMemorySupabase(seed: Record<string, Row[]> = {}) {
 
       if (action === "insert") {
         const inserted = (payload as Row[]).map((row) => ({
-          id: row.id ?? crypto.randomUUID(),
           ...row,
+          id: typeof row.id === "string" && row.id ? row.id : crypto.randomUUID(),
         }));
         rows.push(...inserted);
         return { data: inserted, error: null };
@@ -161,6 +164,9 @@ export function createMemorySupabase(seed: Record<string, Row[]> = {}) {
       },
       order(column: string) {
         orderColumn = column;
+        return chain;
+      },
+      limit(_count?: number) {
         return chain;
       },
       range(from: number, to: number) {

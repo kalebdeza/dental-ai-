@@ -38,12 +38,18 @@ export default function ClaimActions({
   generatedSupportingNotes,
   generatedAppeal,
 }: Props) {
-  const actions = getClaimWorkflowActions(claim, claim.opportunity);
+  const actions = getClaimWorkflowActions(
+    claim,
+    claim.opportunity,
+    new Date(),
+    claim.recovery
+  );
   const view = buildClaimAssistantView({
     claim,
     patient: claim.patient,
     provider: claim.provider,
     opportunity: claim.opportunity,
+    recovery: claim.recovery,
   });
   const officeStatus = claim.opportunity
     ? formatWorkflowStatusLabel(

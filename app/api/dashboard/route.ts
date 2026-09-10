@@ -3,6 +3,7 @@ import { ApiErrorHandler } from "@/lib/api/errors";
 import { logger } from "@/lib/api/logger";
 import { requirePractice } from "@/lib/auth/requirePractice";
 import { loadOpportunityFunnelMetrics } from "@/lib/data/opportunityFunnel";
+import { loadPracticeRecoveredRevenue } from "@/lib/data/recoveredRevenue";
 import {
   selectOpenRecallForPatient,
   type RecallRowSummary,
@@ -179,6 +180,10 @@ export async function GET() {
       supabase,
       practice.id
     );
+    const recovered = await loadPracticeRecoveredRevenue(
+      supabase,
+      practice.id
+    );
 
     return ApiResponse.ok({
       priorityPatients,
@@ -196,6 +201,8 @@ export async function GET() {
 
       totalPatients: patientCount ?? 0,
       funnel,
+      recoveredRevenue: recovered.recoveredRevenue,
+      recoveredPayments: recovered.details,
     });
   } catch (error) {
     logger.error(

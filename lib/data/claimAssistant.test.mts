@@ -17,6 +17,7 @@ import {
   looksLikeSyntheticTestData,
 } from "./claimAssistant.ts";
 import { getClaimWorkflowActions } from "./claimWorkflow.ts";
+import { summarizeClaimRecovery } from "./recoveredRevenue.ts";
 
 type Claim = Tables<"claims">;
 type Patient = Tables<"patients">;
@@ -331,5 +332,31 @@ describe("manual PMS and grounded AI prompts", () => {
       view.recommendedNextStep,
       /Contact the payer to check claim status/
     );
+  });
+
+  it("shows attributed payment instead of submission actions", () => {
+    const recovery = summarizeClaimRecovery({
+      opportunityId: "opp-1",
+      identifiedEstimatedValue: 100,
+      creditedAmount: 40,
+      paymentPostedOn: "2021-02-16",
+    });
+    const view = buildClaimAssistantView({
+      claim: claim(),
+      patient: patient(),
+      recovery,
+    });
+    assert.equal(view.title, "Partially recovered");
+    assert.match(view.recommendedNextStep, /attributed/);
+    assert.equal(view.readiness, null);
+
+    const labels = getClaimWorkflowActions(
+      claim(),
+      linkedOpportunity,
+      new Date(),
+      recovery
+    ).map((item) => item.label);
+    assert.equal(labels.includes("Submit in PMS"), false);
+    assert.equal(labels.includes("Generate Narrative"), false);
   });
 });

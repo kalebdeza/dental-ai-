@@ -201,7 +201,8 @@ export function formatClaimFollowUpGuidance(
 export function getClaimWorkflowActions(
   claim: Claim,
   opportunity: ClaimOpportunitySummary | null | undefined = null,
-  now: Date = new Date()
+  now: Date = new Date(),
+  recovery: { creditedAmount: number } | null | undefined = null
 ): ClaimWorkflowAction[] {
   const bucket = getClaimWorkflowBucket(claim, now);
   const status = opportunity
@@ -306,25 +307,29 @@ export function getClaimWorkflowActions(
 
   switch (bucket) {
     case "draft":
-      return [
-        generateNarrative,
-        submitInPms,
-        generateSupportingNotes,
-        ...officeActions,
-      ];
+      return recovery?.creditedAmount
+        ? [...noteSnooze, ...completeDismiss]
+        : [
+            generateNarrative,
+            submitInPms,
+            generateSupportingNotes,
+            ...officeActions,
+          ];
     case "sent":
     case "outstanding":
       return [...noteSnooze, ...completeDismiss];
     case "denied":
-      return [
-        action("generate_appeal", "Generate Appeal", "primary", true, undefined, {
-          kind: "in_page",
-        }),
-        { ...generateNarrative, emphasis: "secondary" },
-        fixInPms,
-        resubmitInPms,
-        ...officeActions,
-      ];
+      return recovery?.creditedAmount
+        ? [...noteSnooze, ...completeDismiss]
+        : [
+            action("generate_appeal", "Generate Appeal", "primary", true, undefined, {
+              kind: "in_page",
+            }),
+            { ...generateNarrative, emphasis: "secondary" },
+            fixInPms,
+            resubmitInPms,
+            ...officeActions,
+          ];
     case "paid":
       return [
         action(
