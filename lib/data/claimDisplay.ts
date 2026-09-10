@@ -1,3 +1,5 @@
+export const NOT_AVAILABLE_IN_APP = "Not available in this app";
+
 type NamedPerson = {
   first_name: string;
   last_name: string;

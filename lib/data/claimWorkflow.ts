@@ -35,6 +35,7 @@ export type ClaimActionId =
   | "resubmit"
   | "generate_appeal"
   | "generate_narrative"
+  | "generate_supporting_notes"
   | "view_payment"
   | "mark_resolved"
   | "set_follow_up_date"
@@ -182,8 +183,10 @@ export function formatClaimFollowUpGuidance(
   const aging = isClaimAging(claim, now);
   const lines = [
     "The office needs to contact the payer. This app does not contact insurance or submit claims.",
-    `Payer: ${claim.insurance_company?.trim() || "Not available"}`,
+    `Payer: ${claim.insurance_company?.trim() || "Missing"}`,
     `Status: ${claim.status}`,
+    `Amount billed: ${formatClaimAmount(claim.amount_billed)}`,
+    `Amount paid: ${formatClaimAmount(claim.amount_paid)}`,
     `Remaining balance: ${formatClaimAmount(claim.remaining_balance)}`,
     `Submitted: ${formatClaimDate(claim.submitted_at)}`,
   ];
@@ -249,15 +252,6 @@ export function getClaimWorkflowActions(
     ),
   ];
 
-  const openClaim = action(
-    "open_claim",
-    "Open Claim",
-    "secondary",
-    true,
-    undefined,
-    { href: `/claims/${claim.id}`, kind: "navigate" }
-  );
-
   const submitInPms = action(
     "submit",
     "Submit in PMS",
@@ -276,42 +270,67 @@ export function getClaimWorkflowActions(
     { kind: "guidance" }
   );
 
+  const resubmitInPms = action(
+    "resubmit",
+    "Resubmit in PMS",
+    "secondary",
+    true,
+    undefined,
+    { kind: "guidance" }
+  );
+
+  const generateNarrative = action(
+    "generate_narrative",
+    "Generate Narrative",
+    "primary",
+    true,
+    undefined,
+    { kind: "in_page" }
+  );
+
+  const generateSupportingNotes = action(
+    "generate_supporting_notes",
+    "Generate Supporting Notes",
+    "secondary",
+    true,
+    undefined,
+    { kind: "in_page" }
+  );
+
+  const noteSnooze = officeActions.filter(
+    (item) => item.id === "add_note" || item.id === "snooze"
+  );
+  const completeDismiss = officeActions.filter(
+    (item) => item.id === "complete" || item.id === "dismiss"
+  );
+
   switch (bucket) {
     case "draft":
       return [
-        openClaim,
+        generateNarrative,
         submitInPms,
-        action("generate_narrative", "Generate Narrative", "secondary", true, undefined, {
-          kind: "in_page",
-        }),
+        generateSupportingNotes,
         ...officeActions,
       ];
     case "sent":
-      return [
-        action("follow_up", "Follow Up", "primary", true, undefined, {
-          kind: "guidance",
-        }),
-        openClaim,
-        ...officeActions,
-      ];
+    case "outstanding":
+      return [...noteSnooze, ...completeDismiss];
     case "denied":
       return [
-        action("review_denial", "Review Denial", "primary", true, undefined, {
-          kind: "in_page",
-        }),
         action("generate_appeal", "Generate Appeal", "primary", true, undefined, {
           kind: "in_page",
         }),
+        { ...generateNarrative, emphasis: "secondary" },
         fixInPms,
+        resubmitInPms,
         ...officeActions,
       ];
     case "paid":
       return [
-        { ...openClaim, emphasis: "primary" },
         action(
           "mark_resolved",
           "Mark Resolved",
-          "secondary",
+          "primary",
           canComplete,
           hasOpportunity
             ? terminal
@@ -322,19 +341,8 @@ export function getClaimWorkflowActions(
         ),
         ...officeActions.filter((item) => item.id !== "complete"),
       ];
-    case "outstanding":
-      return [
-        action("follow_up", "Follow Up", "primary", true, undefined, {
-          kind: "guidance",
-        }),
-        openClaim,
-        ...officeActions,
-      ];
     default:
-      return [
-        { ...openClaim, emphasis: "primary" },
-        ...officeActions,
-      ];
+      return [...officeActions];
   }
 }
 
@@ -362,56 +370,54 @@ export function getClaimNextAction(
   switch (bucket) {
     case "draft":
       return {
-        title: "AI Next Action",
-        what: "Review this claim and submit it to insurance.",
-        why: "The claim has not been sent to the payer yet.",
-        recommendedAction: "Open Claim, then submit it from your PMS.",
+        title: "Recommended next step",
+        what: "Review stored claim fields, then submit in your PMS.",
+        why: "The claim has not been sent to the payer yet. Readiness uses only fields stored in this app.",
+        recommendedAction: "Generate Narrative, then Submit in PMS.",
         source: "status",
       };
     case "sent":
       return {
-        title: "AI Next Action",
-        what: "Follow up with the payer on this submitted claim.",
+        title: "Recommended next step",
+        what: "Contact the payer to check claim status.",
         why: "The claim has been sent and is waiting on insurance.",
-        recommendedAction: "Follow up with the payer. This app does not contact insurance.",
+        recommendedAction: "Contact the payer to check claim status.",
         source: "status",
       };
     case "denied":
       return {
-        title: "AI Next Action",
-        what: "Review the denial and prepare an appeal if the charge is still valid.",
+        title: "Recommended next step",
+        what: "Review the stored denial reason and prepare an appeal from stored facts.",
         why:
-          claim.denial_reason?.trim() ??
-          "A denial reason is recorded on this claim.",
-        recommendedAction: "Review Denial, then Generate Appeal.",
+          claim.denial_reason?.trim() ||
+          "Denial details are not available in this app.",
+        recommendedAction: "Generate Appeal, then Fix in PMS or Resubmit in PMS.",
         source: "status",
       };
     case "paid":
       return {
-        title: "AI Next Action",
-        what: "Confirm the payment posted and close the workspace item.",
+        title: "Recommended next step",
+        what: "Confirm the payment details. No submission or payer follow-up is needed in this app.",
         why: "This claim has payment recorded and no remaining balance.",
-        recommendedAction: "Open Claim to review payment details.",
+        recommendedAction: "Review payment details, then Mark Resolved if the queue item should close.",
         source: "status",
       };
     case "outstanding":
       return {
-        title: "AI Next Action",
-        what: aging
-          ? "Follow up on this aging outstanding balance."
-          : "Follow up on the outstanding insurance balance.",
+        title: "Recommended next step",
+        what: "Contact the payer to check claim status.",
         why: aging
           ? "The claim still has a remaining balance more than 30 days after submission."
           : "The claim still has a remaining insurance balance.",
-        recommendedAction: "Follow up with the payer. This app does not contact insurance.",
+        recommendedAction: "Contact the payer to check claim status.",
         source: "status",
       };
     default:
       return {
-        title: "AI Next Action",
-        what: "Review the claim details before taking action.",
-        why: "This claim status is not one of the known Open Dental workflow states.",
-        recommendedAction: "Open Claim.",
+        title: "Recommended next step",
+        what: "Review the stored claim fields before taking action.",
+        why: "This claim status is not one of the known workflow states.",
+        recommendedAction: "Review stored claim details.",
         source: "status",
       };
   }

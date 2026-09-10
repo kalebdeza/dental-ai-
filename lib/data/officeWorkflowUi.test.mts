@@ -420,7 +420,7 @@ describe("claims office workflow stays claim-centric", () => {
     assert.ok(labels.includes("Snooze"));
     assert.ok(labels.includes("Complete"));
     assert.ok(labels.includes("Dismiss"));
-    assert.ok(labels.includes("Follow Up"));
+    assert.equal(labels.includes("Follow Up"), false);
     assert.equal(labels.includes("Mark Contacted"), false);
     assert.equal(labels.includes("Call Patient"), false);
 

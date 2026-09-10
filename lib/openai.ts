@@ -1,5 +1,7 @@
 import OpenAI from "openai";
 
+import { CLAIM_AI_SYSTEM_PROMPT } from "./data/claimAssistant";
+
 function getOpenAIClient() {
   return new OpenAI({
     apiKey: process.env.OPENAI_API_KEY,
@@ -121,10 +123,7 @@ ${userQuestion}
 }
 
 export async function generateClaimNarrative(
-  patientName: string,
-  procedureName: string,
-  procedureCode: string,
-  insuranceEstimate: number
+  userPrompt: string
 ): Promise<string> {
   const client = getOpenAIClient();
   const response = await client.responses.create({
@@ -132,30 +131,11 @@ export async function generateClaimNarrative(
     input: [
       {
         role: "system",
-        content: `
-You are an expert dental insurance consultant.
-
-Write a professional insurance narrative that helps justify
-medical necessity for reimbursement.
-
-Keep it concise and professional.
-        `,
+        content: CLAIM_AI_SYSTEM_PROMPT,
       },
       {
         role: "user",
-        content: `
-Patient:
-${patientName}
-
-Procedure:
-${procedureName}
-
-Procedure Code:
-${procedureCode}
-
-Insurance Estimate:
-$${insuranceEstimate}
-        `,
+        content: userPrompt,
       },
     ],
   });

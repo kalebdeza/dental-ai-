@@ -7,6 +7,22 @@ import { ApiErrorHandler } from "@/lib/api/errors";
 import { logger } from "@/lib/api/logger";
 import { checkRateLimit } from "@/lib/api/ratelimit";
 import { requirePractice } from "@/lib/auth/requirePractice";
+import {
+  buildClaimAiFactsBlock,
+  buildClaimAiUserPrompt,
+} from "@/lib/data/claimAssistant";
+import { loadPracticeClaimWithDetails } from "@/lib/data/claims";
+
+const NARRATIVE_MODES = ["narrative", "supporting_notes"] as const;
+
+function isNarrativeMode(
+  value: unknown
+): value is (typeof NARRATIVE_MODES)[number] {
+  return (
+    typeof value === "string" &&
+    (NARRATIVE_MODES as readonly string[]).includes(value)
+  );
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -31,12 +47,32 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
+    const claimId =
+      typeof body.claimId === "string" ? body.claimId.trim() : "";
+    const mode = isNarrativeMode(body.mode) ? body.mode : "narrative";
 
+    if (!claimId) {
+      return ApiResponse.badRequest("claimId is required.");
+    }
+
+    const claim = await loadPracticeClaimWithDetails(
+      auth.supabase,
+      auth.practice.id,
+      claimId
+    );
+
+    if (!claim) {
+      return ApiResponse.notFound("Claim not found.");
+    }
+
+    const factsBlock = buildClaimAiFactsBlock({
+      claim,
+      patient: claim.patient,
+      provider: claim.provider,
+      opportunity: claim.opportunity,
+    });
     const narrative = await generateClaimNarrative(
-      body.patientName,
-      body.procedureName,
-      body.procedureCode,
-      Number(body.insuranceEstimate)
+      buildClaimAiUserPrompt({ mode, factsBlock })
     );
 
     return ApiResponse.ok({

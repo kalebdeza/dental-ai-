@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 import {
+  NOT_AVAILABLE_IN_APP,
   formatClaimAmount,
   formatClaimDate,
   formatPatientName,
@@ -20,6 +21,7 @@ describe("claim display fields", () => {
     assert.equal(formatProcedureName(null), "Not available");
     assert.equal(formatProcedureName(undefined), "Not available");
     assert.equal(formatProcedureName({ procedure_name: "  " }), "Not available");
+    assert.equal(NOT_AVAILABLE_IN_APP, "Not available in this app");
   });
 
   it("does not crash when the patient relationship is missing", () => {

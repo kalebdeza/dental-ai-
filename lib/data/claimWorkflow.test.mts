@@ -44,11 +44,12 @@ describe("claim workflow buckets", () => {
     const draft = claim();
     assert.equal(getClaimWorkflowBucket(draft), "draft");
     const labels = getClaimWorkflowActions(draft).map((item) => item.label);
-    assert.ok(labels.includes("Open Claim"));
+    assert.equal(labels.includes("Open Claim"), false);
     assert.ok(labels.includes("Submit in PMS"));
     assert.equal(labels.includes("Submit Claim"), false);
     assert.equal(labels.includes("Edit Claim"), false);
     assert.ok(labels.includes("Generate Narrative"));
+    assert.ok(labels.includes("Generate Supporting Notes"));
     assert.ok(labels.includes("Add Note"));
     assert.ok(labels.includes("Snooze"));
     assert.ok(labels.includes("Complete"));
@@ -67,8 +68,8 @@ describe("claim workflow buckets", () => {
     });
     assert.equal(getClaimWorkflowBucket(sent), "sent");
     const labels = getClaimWorkflowActions(sent).map((item) => item.label);
-    assert.ok(labels.includes("Follow Up"));
-    assert.ok(labels.includes("Open Claim"));
+    assert.equal(labels.includes("Follow Up"), false);
+    assert.equal(labels.includes("Open Claim"), false);
     assert.equal(labels.includes("View Claim Details"), false);
     assert.ok(labels.includes("Add Note"));
     assert.ok(labels.includes("Snooze"));
@@ -84,7 +85,9 @@ describe("claim workflow buckets", () => {
     assert.equal(getClaimWorkflowBucket(denied), "denied");
     const labels = getClaimWorkflowActions(denied).map((item) => item.label);
     assert.ok(labels.includes("Generate Appeal"));
-    assert.ok(labels.includes("Review Denial"));
+    assert.ok(labels.includes("Fix in PMS"));
+    assert.ok(labels.includes("Resubmit in PMS"));
+    assert.equal(labels.includes("Review Denial"), false);
     assert.equal(labels.includes("Submit Claim"), false);
   });
 
@@ -97,9 +100,9 @@ describe("claim workflow buckets", () => {
     });
     assert.equal(getClaimWorkflowBucket(paid), "paid");
     const labels = getClaimWorkflowActions(paid).map((item) => item.label);
-    assert.ok(labels.includes("Open Claim"));
-    assert.equal(labels.includes("View Payment"), false);
     assert.ok(labels.includes("Mark Resolved"));
+    assert.equal(labels.includes("Open Claim"), false);
+    assert.equal(labels.includes("View Payment"), false);
     assert.ok(labels.includes("Add Note"));
     assert.equal(labels.includes("Submit Claim"), false);
     assert.equal(labels.includes("Mark Contacted"), false);
@@ -116,17 +119,16 @@ describe("claim workflow buckets", () => {
     assert.equal(next.what.toLowerCase().includes("submit"), false);
     const actions = getClaimWorkflowActions(outstanding);
     const labels = actions.map((item) => item.label);
-    assert.ok(labels.includes("Follow Up"));
-    assert.ok(labels.includes("Open Claim"));
+    assert.equal(labels.includes("Follow Up"), false);
+    assert.ok(labels.includes("Add Note"));
+    assert.ok(labels.includes("Snooze"));
+    assert.ok(labels.includes("Complete"));
+    assert.ok(labels.includes("Dismiss"));
+    assert.equal(labels.includes("Open Claim"), false);
     assert.equal(labels.includes("Set Follow-Up Date"), false);
     assert.equal(labels.includes("Submit Claim"), false);
-    const open = actions.find((item) => item.id === "open_claim");
-    assert.equal(open?.href, "/claims/claim-1");
-    assert.equal(open?.kind, "navigate");
-    assert.equal(
-      actions.find((item) => item.id === "follow_up")?.kind,
-      "guidance"
-    );
+    assert.equal(actions.find((item) => item.id === "follow_up"), undefined);
+    assert.equal(actions.find((item) => item.id === "open_claim"), undefined);
   });
 });
 
@@ -181,6 +183,8 @@ describe("claim next action and timeline", () => {
     );
     assert.match(text, /office needs to contact the payer/i);
     assert.match(text, /Payer: Delta/);
+    assert.match(text, /Amount billed:/);
+    assert.match(text, /Amount paid:/);
     assert.match(text, /Remaining balance:/);
     assert.match(text, /Submitted:/);
     assert.match(text, /Aging: 30\+ days/);

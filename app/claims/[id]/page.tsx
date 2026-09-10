@@ -1,15 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 
 import { getClaimWithDetails } from "../../../lib/data/claims";
 import type { ClaimWithDetails } from "../../../lib/data/claims";
+import { getPmsGuidanceMessage } from "../../../lib/data/claimAssistant";
 import {
-  formatPatientName,
-} from "../../../lib/data/claimDisplay";
-import {
-  CLAIM_PMS_GUIDANCE,
   formatClaimFollowUpGuidance,
   type ClaimActionId,
 } from "../../../lib/data/claimWorkflow";
@@ -21,19 +18,18 @@ import {
 
 import ClaimHero from "./components/ClaimHero";
 import ClaimSummary from "./components/ClaimSummary";
-import AIRecommendation from "./components/AIRecommendation";
 import AIClaimCopilot from "./components/AIClaimCopilot";
 import ClaimActions from "./components/ClaimActions";
 import ClaimTimeline from "./components/ClaimTimeline";
 
 export default function ClaimWorkspace() {
   const params = useParams();
-  const router = useRouter();
 
   const [claim, setClaim] = useState<ClaimWithDetails | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [appealLetter, setAppealLetter] = useState("");
-  const [appealLoading, setAppealLoading] = useState(false);
+  const [narrative, setNarrative] = useState("");
+  const [supportingNotes, setSupportingNotes] = useState("");
   const [busyAction, setBusyAction] = useState<string | null>(null);
   const [note, setNote] = useState("");
   const [snoozeUntil, setSnoozeUntil] = useState("");
@@ -58,10 +54,58 @@ export default function ClaimWorkspace() {
     });
   }
 
+  async function generateClaimText(
+    mode: "narrative" | "supporting_notes",
+    busyId: ClaimActionId
+  ) {
+    if (!claim) {
+      return;
+    }
+
+    try {
+      setBusyAction(busyId);
+      setNotice(
+        mode === "supporting_notes"
+          ? "Generating supporting notes from stored claim data…"
+          : "Generating narrative from stored claim data…"
+      );
+
+      const response = await fetch("/api/claims/narrative", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          claimId: claim.id,
+          mode,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setNotice(data.message ?? "Text generation is unavailable.");
+        return;
+      }
+
+      const text = data.narrative ?? "";
+      if (mode === "supporting_notes") {
+        setSupportingNotes(text);
+        setNotice("Supporting notes generated from stored claim data.");
+      } else {
+        setNarrative(text);
+        setNotice("Narrative generated from stored claim data.");
+      }
+      scrollTo("claim-assistant-output");
+    } finally {
+      setBusyAction(null);
+    }
+  }
+
   async function generateAppeal(current: ClaimWithDetails) {
     try {
-      setAppealLoading(true);
-      setNotice("Generating appeal letter…");
+      setBusyAction("generate_appeal");
+      setNotice("Generating appeal letter from stored claim data…");
 
       const response = await fetch("/api/generate-appeal", {
         method: "POST",
@@ -69,20 +113,7 @@ export default function ClaimWorkspace() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          patient: {
-            name: formatPatientName(current.patient),
-          },
-          claims: [
-            {
-              claim_number: current.claim_number,
-              status: current.status,
-              amount_billed: current.amount_billed,
-              amount_paid: current.amount_paid,
-              remaining_balance: current.remaining_balance,
-              insurance_company: current.insurance_company,
-              denial_reason: current.denial_reason,
-            },
-          ],
+          claimId: current.id,
         }),
       });
 
@@ -94,9 +125,10 @@ export default function ClaimWorkspace() {
       }
 
       setAppealLetter(data.letter ?? "");
-      setNotice("Appeal letter generated below.");
+      setNotice("Appeal letter generated from stored claim data.");
+      scrollTo("claim-assistant-output");
     } finally {
-      setAppealLoading(false);
+      setBusyAction(null);
     }
   }
 
@@ -140,19 +172,15 @@ export default function ClaimWorkspace() {
     }
 
     switch (id) {
-      case "open_claim":
-      case "view_details":
-      case "view_payment":
-      case "review":
-        router.push(`/claims/${claim.id}`);
-        return;
       case "review_denial":
         setNotice(null);
         scrollTo("claim-denial");
         return;
       case "generate_narrative":
-        setNotice("Use Generate Narrative in AI Claim Copilot below.");
-        scrollTo("claim-copilot");
+        void generateClaimText("narrative", "generate_narrative");
+        return;
+      case "generate_supporting_notes":
+        void generateClaimText("supporting_notes", "generate_supporting_notes");
         return;
       case "generate_appeal":
         void generateAppeal(claim);
@@ -161,7 +189,7 @@ export default function ClaimWorkspace() {
       case "submit":
       case "fix":
       case "resubmit":
-        setNotice(CLAIM_PMS_GUIDANCE);
+        setNotice(getPmsGuidanceMessage(id));
         return;
       case "follow_up":
         setNotice(formatClaimFollowUpGuidance(claim));
@@ -221,18 +249,18 @@ export default function ClaimWorkspace() {
         <ClaimSummary claim={claim} />
 
         <div className="space-y-6 lg:col-span-2">
-          <AIRecommendation claim={claim} />
           <ClaimActions
             claim={claim}
             onAction={handleAction}
-            notice={
-              appealLoading ? "Generating appeal letter…" : notice
-            }
+            notice={notice}
             busyAction={busyAction}
             note={note}
             snoozeUntil={snoozeUntil}
             onNoteChange={setNote}
             onSnoozeUntilChange={setSnoozeUntil}
+            generatedNarrative={narrative}
+            generatedSupportingNotes={supportingNotes}
+            generatedAppeal={appealLetter}
           />
         </div>
       </div>
@@ -240,7 +268,20 @@ export default function ClaimWorkspace() {
       <ClaimTimeline claim={claim} />
 
       <div id="claim-copilot">
-        <AIClaimCopilot claim={claim} generatedLetter={appealLetter} />
+        <AIClaimCopilot
+          claim={claim}
+          generatedLetter={appealLetter}
+          narrative={narrative}
+          supportingNotes={supportingNotes}
+          narrativeLoading={busyAction === "generate_narrative"}
+          supportingNotesLoading={busyAction === "generate_supporting_notes"}
+          onGenerateNarrative={() =>
+            handleAction("generate_narrative")
+          }
+          onGenerateSupportingNotes={() =>
+            handleAction("generate_supporting_notes")
+          }
+        />
       </div>
     </main>
   );

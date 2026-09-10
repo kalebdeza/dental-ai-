@@ -8,6 +8,12 @@ import { logger } from "@/lib/api/logger";
 import { checkRateLimit } from "@/lib/api/ratelimit";
 import { env } from "@/lib/api/env";
 import { requirePractice } from "@/lib/auth/requirePractice";
+import {
+  CLAIM_AI_SYSTEM_PROMPT,
+  buildClaimAiFactsBlock,
+  buildClaimAiUserPrompt,
+} from "@/lib/data/claimAssistant";
+import { loadPracticeClaimWithDetails } from "@/lib/data/claims";
 
 const openai = new OpenAI({
   apiKey: env.OPENAI_API_KEY,
@@ -35,43 +41,55 @@ export async function POST(req: NextRequest) {
       return auth.response;
     }
 
-    const { patient, claims } = await req.json();
+    const body = await req.json();
+    const claimId =
+      typeof body.claimId === "string" ? body.claimId.trim() : "";
 
-    const prompt = `
-You are an insurance appeals specialist for dental practices.
+    let userPrompt: string;
 
+    if (claimId) {
+      const claim = await loadPracticeClaimWithDetails(
+        auth.supabase,
+        auth.practice.id,
+        claimId
+      );
+
+      if (!claim) {
+        return ApiResponse.notFound("Claim not found.");
+      }
+
+      userPrompt = buildClaimAiUserPrompt({
+        mode: "appeal",
+        factsBlock: buildClaimAiFactsBlock({
+          claim,
+          patient: claim.patient,
+          provider: claim.provider,
+          opportunity: claim.opportunity,
+        }),
+      });
+    } else {
+      const { patient, claims } = body;
+      userPrompt = buildClaimAiUserPrompt({
+        mode: "appeal",
+        factsBlock: `Stored facts from the request (do not add anything that is not listed):
 Patient:
-${JSON.stringify(patient, null, 2)}
+${JSON.stringify(patient ?? {}, null, 2)}
 
 Claims:
-${JSON.stringify(claims, null, 2)}
-
-Write a professional insurance appeal letter.
-
-Include:
-- Date
-- Greeting
-- Reason for appeal
-- Medical necessity explanation
-- Request for reconsideration
-- Professional closing
-
-Keep it under 400 words.
-
-Return only the letter.
-`;
+${JSON.stringify(claims ?? [], null, 2)}`,
+      });
+    }
 
     const response = await openai.chat.completions.create({
       model: "gpt-5.5",
       messages: [
         {
           role: "system",
-          content:
-            "You write professional dental insurance appeal letters.",
+          content: CLAIM_AI_SYSTEM_PROMPT,
         },
         {
           role: "user",
-          content: prompt,
+          content: userPrompt,
         },
       ],
     });

@@ -1,9 +1,9 @@
 import type { ClaimWithDetails } from "../../../../lib/data/claims";
 import {
+  NOT_AVAILABLE_IN_APP,
   formatClaimAmount,
   formatClaimDate,
   formatPatientName,
-  formatProcedureName,
   formatProviderName,
 } from "../../../../lib/data/claimDisplay";
 import {
@@ -57,9 +57,9 @@ export default function ClaimSummary({ claim }: Props) {
         />
         <Row
           label="Insurance"
-          value={claim.insurance_company?.trim() || "Not available"}
+          value={claim.insurance_company?.trim() || "Missing"}
         />
-        <Row label="Procedure" value={formatProcedureName(null)} />
+        <Row label="Procedure" value={NOT_AVAILABLE_IN_APP} />
         <Row label="Amount billed" value={formatClaimAmount(claim.amount_billed)} />
         <Row label="Amount paid" value={formatClaimAmount(claim.amount_paid)} />
         <Row
@@ -74,10 +74,7 @@ export default function ClaimSummary({ claim }: Props) {
       </div>
 
       {claim.denial_reason?.trim() ? (
-        <div
-          id="claim-denial"
-          className="mt-6 rounded-xl border border-red-100 bg-red-50 p-4"
-        >
+        <div className="mt-6 rounded-xl border border-red-100 bg-red-50 p-4">
           <p className="text-sm font-semibold text-red-700">Denial reason</p>
           <p className="mt-1 text-sm text-red-800">{claim.denial_reason}</p>
         </div>

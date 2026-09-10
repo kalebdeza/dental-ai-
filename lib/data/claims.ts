@@ -68,40 +68,56 @@ export async function getClaim(id: string): Promise<Claim> {
   return data;
 }
 
-export async function getClaimWithDetails(
-  id: string
-): Promise<ClaimWithDetails> {
-  const claim = await getClaim(id);
+type QueryClient = {
+  from: (table: string) => any;
+};
+
+export async function loadPracticeClaimWithDetails(
+  client: QueryClient,
+  practiceId: string,
+  claimId: string
+): Promise<ClaimWithDetails | null> {
+  const { data: claim, error: claimError } = await client
+    .from("claims")
+    .select("*")
+    .eq("id", claimId)
+    .eq("practice_id", practiceId)
+    .maybeSingle();
+
+  if (claimError) throw claimError;
+  if (!claim || claim.practice_id !== practiceId) {
+    return null;
+  }
 
   const [{ data: patient }, { data: provider }, { data: opportunities }] =
     await Promise.all([
-    supabase
-      .from("patients")
-      .select("*")
-      .eq("id", claim.patient_id)
-      .eq("practice_id", claim.practice_id)
-      .maybeSingle(),
+      client
+        .from("patients")
+        .select("*")
+        .eq("id", claim.patient_id)
+        .eq("practice_id", practiceId)
+        .maybeSingle(),
 
-    claim.provider_id
-      ? supabase
-          .from("providers")
-          .select("*")
-          .eq("id", claim.provider_id)
-          .eq("practice_id", claim.practice_id)
-          .maybeSingle()
-      : Promise.resolve({ data: null }),
+      claim.provider_id
+        ? client
+            .from("providers")
+            .select("*")
+            .eq("id", claim.provider_id)
+            .eq("practice_id", practiceId)
+            .maybeSingle()
+        : Promise.resolve({ data: null }),
 
-    supabase
-      .from("revenue_opportunities")
-      .select(
-        "id, reason, recommended_action, estimated_value, priority, completed, workflow_status, snoozed_until"
-      )
-      .eq("practice_id", claim.practice_id)
-      .eq("claim_id", claim.id)
-      .eq("opportunity_type", "Claim")
-      .order("created_at", { ascending: false })
-      .limit(1),
-  ]);
+      client
+        .from("revenue_opportunities")
+        .select(
+          "id, reason, recommended_action, estimated_value, priority, completed, workflow_status, snoozed_until"
+        )
+        .eq("practice_id", practiceId)
+        .eq("claim_id", claim.id)
+        .eq("opportunity_type", "Claim")
+        .order("created_at", { ascending: false })
+        .limit(1),
+    ]);
 
   const opportunity = opportunities?.[0]
     ? {
@@ -119,10 +135,10 @@ export async function getClaimWithDetails(
   let activities: OpportunityActivityRow[] = [];
 
   if (opportunity) {
-    const { data: activityRows, error: activitiesError } = await supabase
+    const { data: activityRows, error: activitiesError } = await client
       .from("opportunity_activities")
       .select("*")
-      .eq("practice_id", claim.practice_id)
+      .eq("practice_id", practiceId)
       .eq("opportunity_id", opportunity.id)
       .order("created_at", { ascending: true });
 
@@ -137,4 +153,22 @@ export async function getClaimWithDetails(
     opportunity,
     activities,
   };
+}
+
+export async function getClaimWithDetails(
+  id: string
+): Promise<ClaimWithDetails> {
+  const practiceId = await resolveSolePracticeId();
+
+  if (!practiceId) {
+    throw new Error("Practice not resolved.");
+  }
+
+  const details = await loadPracticeClaimWithDetails(supabase, practiceId, id);
+
+  if (!details) {
+    throw new Error("Claim not found.");
+  }
+
+  return details;
 }

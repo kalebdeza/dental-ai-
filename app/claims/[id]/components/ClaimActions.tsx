@@ -1,20 +1,15 @@
 "use client";
 
-import Link from "next/link";
 import type { ClaimWithDetails } from "../../../../lib/data/claims";
+import { buildClaimAssistantView } from "../../../../lib/data/claimAssistant";
 import {
   getClaimWorkflowActions,
-  getClaimWorkflowBucket,
-  isClaimAging,
   type ClaimActionId,
 } from "../../../../lib/data/claimWorkflow";
-import {
-  formatClaimAmount,
-  formatClaimDate,
-} from "../../../../lib/data/claimDisplay";
 import { formatWorkflowStatusLabel, readStoredWorkflowStatus } from "../../../../lib/data/opportunityWorkflow";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import ClaimAssistantPanel from "./ClaimAssistantPanel";
 
 interface Props {
   claim: ClaimWithDetails;
@@ -25,6 +20,9 @@ interface Props {
   snoozeUntil: string;
   onNoteChange: (value: string) => void;
   onSnoozeUntilChange: (value: string) => void;
+  generatedNarrative: string;
+  generatedSupportingNotes: string;
+  generatedAppeal: string;
 }
 
 export default function ClaimActions({
@@ -36,9 +34,17 @@ export default function ClaimActions({
   snoozeUntil,
   onNoteChange,
   onSnoozeUntilChange,
+  generatedNarrative,
+  generatedSupportingNotes,
+  generatedAppeal,
 }: Props) {
   const actions = getClaimWorkflowActions(claim, claim.opportunity);
-  const bucket = getClaimWorkflowBucket(claim);
+  const view = buildClaimAssistantView({
+    claim,
+    patient: claim.patient,
+    provider: claim.provider,
+    opportunity: claim.opportunity,
+  });
   const officeStatus = claim.opportunity
     ? formatWorkflowStatusLabel(
         readStoredWorkflowStatus({
@@ -48,16 +54,16 @@ export default function ClaimActions({
       )
     : null;
   const busy = Boolean(busyAction);
-  const showFollowUp = actions.some((item) => item.id === "follow_up");
-  const aging = isClaimAging(claim);
+  const showOfficeInputs = actions.some(
+    (item) => item.id === "add_note" || item.id === "snooze"
+  );
 
   return (
-    <div className="rounded-2xl border bg-white p-6 shadow-sm">
-      <h2 className="mb-4 text-xl font-bold">Actions</h2>
+    <div id="claim-assistant-output" className="rounded-2xl border bg-white p-6 shadow-sm">
+      <h2 className="mb-2 text-xl font-bold">{view.title}</h2>
       <p className="mb-5 text-sm text-slate-500">
-        Claim status is {bucket}. This app does not submit claims or contact
-        payers. Notes, snooze, complete, and dismiss apply to the office queue
-        item when an opportunity is linked.
+        This app can generate text from stored claim data and record office
+        notes. It does not submit claims, contact payers, or create appointments.
         {officeStatus ? ` Office queue: ${officeStatus}.` : ""}
       </p>
 
@@ -67,16 +73,6 @@ export default function ClaimActions({
             item.emphasis === "primary"
               ? "rounded-xl bg-slate-900 px-4 py-3 text-sm font-medium text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300"
               : "rounded-xl border bg-white px-4 py-3 text-sm font-medium text-slate-800 hover:bg-slate-50 disabled:cursor-not-allowed disabled:text-slate-400";
-
-          if (item.href) {
-            return (
-              <div key={item.id}>
-                <Link href={item.href} className={`${className} inline-block`}>
-                  {item.label}
-                </Link>
-              </div>
-            );
-          }
 
           return (
             <div key={item.id} className="max-w-xs">
@@ -99,73 +95,61 @@ export default function ClaimActions({
         })}
       </div>
 
-      {showFollowUp ? (
-        <div
-          id="claim-follow-up"
-          className="mt-6 rounded-xl border border-amber-100 bg-amber-50 p-4 text-sm text-slate-800"
-        >
-          <p className="font-semibold">Office follow-up</p>
-          <p className="mt-1">
-            The office needs to contact the payer. This app does not contact
-            insurance or submit claims.
-          </p>
-          <dl className="mt-3 grid gap-1 sm:grid-cols-2">
-            <div>
-              <dt className="text-slate-500">Payer</dt>
-              <dd className="font-medium">
-                {claim.insurance_company?.trim() || "Not available"}
-              </dd>
+      {generatedNarrative || generatedSupportingNotes || generatedAppeal ? (
+        <div className="mt-6 space-y-4">
+          {generatedNarrative ? (
+            <div className="rounded-xl bg-slate-50 p-4 text-sm">
+              <p className="font-semibold">Generated narrative</p>
+              <p className="mt-2 whitespace-pre-wrap text-slate-700">
+                {generatedNarrative}
+              </p>
             </div>
-            <div>
-              <dt className="text-slate-500">Status</dt>
-              <dd className="font-medium">{claim.status}</dd>
+          ) : null}
+          {generatedSupportingNotes ? (
+            <div className="rounded-xl bg-slate-50 p-4 text-sm">
+              <p className="font-semibold">Generated supporting notes</p>
+              <p className="mt-2 whitespace-pre-wrap text-slate-700">
+                {generatedSupportingNotes}
+              </p>
             </div>
-            <div>
-              <dt className="text-slate-500">Remaining balance</dt>
-              <dd className="font-medium">
-                {formatClaimAmount(claim.remaining_balance)}
-              </dd>
+          ) : null}
+          {generatedAppeal ? (
+            <div className="rounded-xl bg-slate-50 p-4 text-sm">
+              <p className="font-semibold">Generated appeal</p>
+              <p className="mt-2 whitespace-pre-wrap text-slate-700">
+                {generatedAppeal}
+              </p>
             </div>
-            <div>
-              <dt className="text-slate-500">Submitted</dt>
-              <dd className="font-medium">
-                {formatClaimDate(claim.submitted_at)}
-              </dd>
-            </div>
-            {aging ? (
-              <div className="sm:col-span-2">
-                <dt className="text-slate-500">Aging</dt>
-                <dd className="font-medium">
-                  30+ days since submitted, with a remaining balance.
-                </dd>
-              </div>
-            ) : null}
-          </dl>
+          ) : null}
         </div>
       ) : null}
 
-      <div className="mt-6 grid gap-4 md:grid-cols-2">
-        <label className="text-sm font-semibold text-slate-500">
-          Note
-          <Textarea
-            value={note}
-            onChange={(event) => onNoteChange(event.target.value)}
-            placeholder="Add a note before saving"
-            className="mt-2 min-h-24"
-            disabled={busy}
-          />
-        </label>
-        <label className="text-sm font-semibold text-slate-500">
-          Snooze until
-          <Input
-            type="datetime-local"
-            value={snoozeUntil}
-            onChange={(event) => onSnoozeUntilChange(event.target.value)}
-            className="mt-2 h-10"
-            disabled={busy}
-          />
-        </label>
-      </div>
+      <ClaimAssistantPanel view={view} />
+
+      {showOfficeInputs ? (
+        <div className="mt-6 grid gap-4 md:grid-cols-2">
+          <label className="text-sm font-semibold text-slate-500">
+            Note
+            <Textarea
+              value={note}
+              onChange={(event) => onNoteChange(event.target.value)}
+              placeholder="Add a note before saving"
+              className="mt-2 min-h-24"
+              disabled={busy}
+            />
+          </label>
+          <label className="text-sm font-semibold text-slate-500">
+            Snooze until
+            <Input
+              type="datetime-local"
+              value={snoozeUntil}
+              onChange={(event) => onSnoozeUntilChange(event.target.value)}
+              className="mt-2 h-10"
+              disabled={busy}
+            />
+          </label>
+        </div>
+      ) : null}
 
       {notice ? (
         <p className="mt-4 rounded-xl bg-slate-50 p-4 text-sm whitespace-pre-line text-slate-700">
