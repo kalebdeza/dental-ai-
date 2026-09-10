@@ -4,6 +4,10 @@ import {
   isClaimAwaitingSubmission,
 } from "../opendental/status.ts";
 import {
+  formatClaimAmount,
+  formatClaimDate,
+} from "./claimDisplay.ts";
+import {
   isOfficeWorkflowTerminal,
   readStoredWorkflowStatus,
 } from "./opportunityWorkflow.ts";
@@ -25,6 +29,7 @@ export type ClaimActionId =
   | "follow_up"
   | "add_note"
   | "view_details"
+  | "open_claim"
   | "review_denial"
   | "fix"
   | "resubmit"
@@ -37,12 +42,16 @@ export type ClaimActionId =
   | "dismiss"
   | "complete";
 
+export type ClaimActionKind = "workflow" | "navigate" | "guidance" | "in_page";
+
 export type ClaimWorkflowAction = {
   id: ClaimActionId;
   label: string;
   emphasis: "primary" | "secondary";
   available: boolean;
   unavailableReason?: string;
+  href?: string;
+  kind: ClaimActionKind;
 };
 
 export type ClaimNextAction = {
@@ -144,14 +153,46 @@ export function getClaimWorkflowBucket(
   return "unknown";
 }
 
+export const CLAIM_PMS_GUIDANCE =
+  "This is done in your PMS. The app doesn't currently edit, submit, or resubmit insurance claims.";
+
 function action(
   id: ClaimActionId,
   label: string,
   emphasis: "primary" | "secondary",
   available = true,
-  unavailableReason?: string
+  unavailableReason?: string,
+  extra: { href?: string; kind?: ClaimActionKind } = {}
 ): ClaimWorkflowAction {
-  return { id, label, emphasis, available, unavailableReason };
+  return {
+    id,
+    label,
+    emphasis,
+    available,
+    unavailableReason,
+    href: extra.href,
+    kind: extra.kind ?? (available ? "workflow" : "guidance"),
+  };
+}
+
+export function formatClaimFollowUpGuidance(
+  claim: Claim,
+  now: Date = new Date()
+): string {
+  const aging = isClaimAging(claim, now);
+  const lines = [
+    "The office needs to contact the payer. This app does not contact insurance or submit claims.",
+    `Payer: ${claim.insurance_company?.trim() || "Not available"}`,
+    `Status: ${claim.status}`,
+    `Remaining balance: ${formatClaimAmount(claim.remaining_balance)}`,
+    `Submitted: ${formatClaimDate(claim.submitted_at)}`,
+  ];
+
+  if (aging) {
+    lines.push("Aging: 30+ days since submitted, with a remaining balance.");
+  }
+
+  return lines.join("\n");
 }
 
 export function getClaimWorkflowActions(
@@ -179,57 +220,94 @@ export function getClaimWorkflowActions(
       "Add Note",
       "secondary",
       canNote,
-      canNote ? undefined : NOTE_NO_OPPORTUNITY
+      canNote ? undefined : NOTE_NO_OPPORTUNITY,
+      { kind: "workflow" }
     ),
     action(
       "snooze",
       "Snooze",
       "secondary",
       canSnooze,
-      hasOpportunity ? (terminal ? SNOOZE_TERMINAL : undefined) : SNOOZE_NO_OPPORTUNITY
+      hasOpportunity ? (terminal ? SNOOZE_TERMINAL : undefined) : SNOOZE_NO_OPPORTUNITY,
+      { kind: "workflow" }
     ),
     action(
       "complete",
       "Complete",
       "secondary",
       canComplete,
-      hasOpportunity ? (terminal ? SNOOZE_TERMINAL : undefined) : COMPLETE_NO_OPPORTUNITY
+      hasOpportunity ? (terminal ? SNOOZE_TERMINAL : undefined) : COMPLETE_NO_OPPORTUNITY,
+      { kind: "workflow" }
     ),
     action(
       "dismiss",
       "Dismiss",
       "secondary",
       canDismiss,
-      hasOpportunity ? (terminal ? SNOOZE_TERMINAL : undefined) : DISMISS_NO_OPPORTUNITY
+      hasOpportunity ? (terminal ? SNOOZE_TERMINAL : undefined) : DISMISS_NO_OPPORTUNITY,
+      { kind: "workflow" }
     ),
   ];
+
+  const openClaim = action(
+    "open_claim",
+    "Open Claim",
+    "secondary",
+    true,
+    undefined,
+    { href: `/claims/${claim.id}`, kind: "navigate" }
+  );
+
+  const submitInPms = action(
+    "submit",
+    "Submit in PMS",
+    "secondary",
+    true,
+    undefined,
+    { kind: "guidance" }
+  );
+
+  const fixInPms = action(
+    "fix",
+    "Fix in PMS",
+    "secondary",
+    true,
+    undefined,
+    { kind: "guidance" }
+  );
 
   switch (bucket) {
     case "draft":
       return [
-        action("review", "Review Claim", "primary"),
-        action("edit", "Edit Claim", "secondary"),
-        action("submit", "Submit Claim", "primary"),
-        action("generate_narrative", "Generate Narrative", "secondary"),
+        openClaim,
+        submitInPms,
+        action("generate_narrative", "Generate Narrative", "secondary", true, undefined, {
+          kind: "in_page",
+        }),
         ...officeActions,
       ];
     case "sent":
       return [
-        action("follow_up", "Follow Up", "primary"),
-        action("view_details", "View Claim Details", "secondary"),
+        action("follow_up", "Follow Up", "primary", true, undefined, {
+          kind: "guidance",
+        }),
+        openClaim,
         ...officeActions,
       ];
     case "denied":
       return [
-        action("review_denial", "Review Denial", "primary"),
-        action("fix", "Fix Claim", "secondary"),
-        action("resubmit", "Resubmit", "secondary"),
-        action("generate_appeal", "Generate Appeal", "primary"),
+        action("review_denial", "Review Denial", "primary", true, undefined, {
+          kind: "in_page",
+        }),
+        action("generate_appeal", "Generate Appeal", "primary", true, undefined, {
+          kind: "in_page",
+        }),
+        fixInPms,
         ...officeActions,
       ];
     case "paid":
       return [
-        action("view_payment", "View Payment", "primary"),
+        { ...openClaim, emphasis: "primary" },
         action(
           "mark_resolved",
           "Mark Resolved",
@@ -239,19 +317,22 @@ export function getClaimWorkflowActions(
             ? terminal
               ? SNOOZE_TERMINAL
               : undefined
-            : COMPLETE_NO_OPPORTUNITY
+            : COMPLETE_NO_OPPORTUNITY,
+          { kind: "workflow" }
         ),
         ...officeActions.filter((item) => item.id !== "complete"),
       ];
     case "outstanding":
       return [
-        action("follow_up", "Follow Up", "primary"),
-        action("view_details", "View Claim Details", "secondary"),
+        action("follow_up", "Follow Up", "primary", true, undefined, {
+          kind: "guidance",
+        }),
+        openClaim,
         ...officeActions,
       ];
     default:
       return [
-        action("view_details", "View Claim Details", "primary"),
+        { ...openClaim, emphasis: "primary" },
         ...officeActions,
       ];
   }
@@ -284,7 +365,7 @@ export function getClaimNextAction(
         title: "AI Next Action",
         what: "Review this claim and submit it to insurance.",
         why: "The claim has not been sent to the payer yet.",
-        recommendedAction: "Review Claim, then Submit Claim from Open Dental.",
+        recommendedAction: "Open Claim, then submit it from your PMS.",
         source: "status",
       };
     case "sent":
@@ -292,7 +373,7 @@ export function getClaimNextAction(
         title: "AI Next Action",
         what: "Follow up with the payer on this submitted claim.",
         why: "The claim has been sent and is waiting on insurance.",
-        recommendedAction: "Follow Up with the insurance company.",
+        recommendedAction: "Follow up with the payer. This app does not contact insurance.",
         source: "status",
       };
     case "denied":
@@ -310,7 +391,7 @@ export function getClaimNextAction(
         title: "AI Next Action",
         what: "Confirm the payment posted and close the workspace item.",
         why: "This claim has payment recorded and no remaining balance.",
-        recommendedAction: "View Payment details.",
+        recommendedAction: "Open Claim to review payment details.",
         source: "status",
       };
     case "outstanding":
@@ -322,7 +403,7 @@ export function getClaimNextAction(
         why: aging
           ? "The claim still has a remaining balance more than 30 days after submission."
           : "The claim still has a remaining insurance balance.",
-        recommendedAction: "Follow Up with the insurance company.",
+        recommendedAction: "Follow up with the payer. This app does not contact insurance.",
         source: "status",
       };
     default:
@@ -330,7 +411,7 @@ export function getClaimNextAction(
         title: "AI Next Action",
         what: "Review the claim details before taking action.",
         why: "This claim status is not one of the known Open Dental workflow states.",
-        recommendedAction: "View Claim Details.",
+        recommendedAction: "Open Claim.",
         source: "status",
       };
   }

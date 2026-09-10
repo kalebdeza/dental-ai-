@@ -39,7 +39,7 @@ export default function TreatmentActions({
 }: Props) {
   return (
     <OfficeWorkflowActions
-      description="Call uses the stored patient phone and does not mark Contacted. Treatment scheduling stays in the practice system."
+      description="Call uses the stored patient phone. Schedule in PMS is manual guidance — this app does not create appointments."
       actions={actions}
       contactOutcomes={getTreatmentContactOutcomes({
         workflowStatus,

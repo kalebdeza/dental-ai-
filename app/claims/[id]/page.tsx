@@ -1,15 +1,20 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 
 import { getClaimWithDetails } from "../../../lib/data/claims";
 import type { ClaimWithDetails } from "../../../lib/data/claims";
 import {
   formatPatientName,
 } from "../../../lib/data/claimDisplay";
-import type { ClaimActionId } from "../../../lib/data/claimWorkflow";
 import {
+  CLAIM_PMS_GUIDANCE,
+  formatClaimFollowUpGuidance,
+  type ClaimActionId,
+} from "../../../lib/data/claimWorkflow";
+import {
+  officeWorkflowSuccessMessage,
   postOfficeWorkflow,
   toSnoozeIso,
 } from "../../components/postOfficeWorkflow";
@@ -23,6 +28,7 @@ import ClaimTimeline from "./components/ClaimTimeline";
 
 export default function ClaimWorkspace() {
   const params = useParams();
+  const router = useRouter();
 
   const [claim, setClaim] = useState<ClaimWithDetails | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -116,6 +122,7 @@ export default function ClaimWorkspace() {
       setNote("");
       setSnoozeUntil("");
       await loadClaim();
+      setNotice(officeWorkflowSuccessMessage(action, extra));
     } catch (error) {
       setNotice(
         error instanceof Error
@@ -133,18 +140,18 @@ export default function ClaimWorkspace() {
     }
 
     switch (id) {
-      case "review":
+      case "open_claim":
       case "view_details":
       case "view_payment":
-        setNotice(null);
-        scrollTo("claim-summary");
+      case "review":
+        router.push(`/claims/${claim.id}`);
         return;
       case "review_denial":
         setNotice(null);
         scrollTo("claim-denial");
         return;
       case "generate_narrative":
-        setNotice("Use Generate Narrative in AI Claim Copilot.");
+        setNotice("Use Generate Narrative in AI Claim Copilot below.");
         scrollTo("claim-copilot");
         return;
       case "generate_appeal":
@@ -154,14 +161,11 @@ export default function ClaimWorkspace() {
       case "submit":
       case "fix":
       case "resubmit":
-        setNotice(
-          "Claim changes and payer submission are done in Open Dental. This workspace does not send claims to insurance."
-        );
+        setNotice(CLAIM_PMS_GUIDANCE);
         return;
       case "follow_up":
-        setNotice(
-          "Follow up with the payer on this claim. Use Snooze if you want to hide the office queue item until a later time."
-        );
+        setNotice(formatClaimFollowUpGuidance(claim));
+        scrollTo("claim-follow-up");
         return;
       case "add_note":
         if (!note.trim()) {

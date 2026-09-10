@@ -106,8 +106,8 @@ export const DESIRED_RECALL_STEPS = [
 
 export const DESIRED_RECALL_TERMINAL = "Dismissed";
 
-const SCHEDULE_UNAVAILABLE =
-  "This app cannot create appointments. Schedule the visit in the practice management system. A Scheduled contact outcome records that the office scheduled the patient; it does not create an Open Dental appointment.";
+export const SCHEDULE_IN_PMS_GUIDANCE =
+  "The app doesn't currently create appointments. Schedule this visit in your PMS, then record the Scheduled contact outcome here.";
 
 const CALL_NO_PHONE =
   "No patient phone is stored (mobile, home, or work).";
@@ -325,7 +325,13 @@ export function getRecallWorkflowActions(input: {
           : undefined
         : CALL_NO_PHONE
     ),
-    action("schedule", "Schedule Patient", "secondary", false, SCHEDULE_UNAVAILABLE),
+    action(
+      "schedule",
+      "Schedule in PMS",
+      "secondary",
+      canAdvance,
+      terminal ? TERMINAL_UNAVAILABLE : undefined
+    ),
     action(
       "mark_contacted",
       "Mark Contacted",

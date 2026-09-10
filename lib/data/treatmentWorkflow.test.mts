@@ -181,11 +181,15 @@ describe("treatment workflow persistence", () => {
     );
     assert.equal(
       withPhone.find((item) => item.id === "schedule")?.label,
-      "Schedule Treatment"
+      "Schedule in PMS"
+    );
+    assert.equal(
+      withoutPhone.find((item) => item.id === "call")?.unavailableReason,
+      "No patient phone is stored (mobile, home, or work)."
     );
   });
 
-  it("enables persisted office actions and keeps scheduling disabled", () => {
+  it("enables persisted office actions and Schedule in PMS guidance", () => {
     const actions = getTreatmentWorkflowActions({
       phone: "555-0100",
       workflowStatus: "open",
@@ -194,7 +198,8 @@ describe("treatment workflow persistence", () => {
     const byId = Object.fromEntries(actions.map((item) => [item.id, item]));
 
     assert.equal(byId.dismiss.available, true);
-    assert.equal(byId.schedule.available, false);
+    assert.equal(byId.schedule.available, true);
+    assert.equal(byId.schedule.label, "Schedule in PMS");
     assert.equal(byId.mark_contacted.available, true);
     assert.equal(byId.add_note.available, true);
     assert.equal(byId.snooze.available, true);

@@ -107,25 +107,31 @@ export default function OfficeWorkflowActions({
           }
 
           return (
-            <Button
-              key={item.id}
-              type="button"
-              size="lg"
-              variant={
-                item.emphasis === "destructive"
-                  ? "destructive"
-                  : item.emphasis === "primary"
-                    ? "default"
-                    : "outline"
-              }
-              disabled={!item.available || busy}
-              title={item.unavailableReason}
-              onClick={() => onAction(item.id)}
-              className={className}
-            >
-              <Icon />
-              {isBusy ? `${item.label}…` : item.label}
-            </Button>
+            <div key={item.id} className="max-w-xs">
+              <Button
+                type="button"
+                size="lg"
+                variant={
+                  item.emphasis === "destructive"
+                    ? "destructive"
+                    : item.emphasis === "primary"
+                      ? "default"
+                      : "outline"
+                }
+                disabled={!item.available || busy}
+                title={item.unavailableReason}
+                onClick={() => onAction(item.id)}
+                className={className}
+              >
+                <Icon />
+                {isBusy ? `${item.label}…` : item.label}
+              </Button>
+              {!item.available && item.unavailableReason ? (
+                <p className="mt-1 text-xs text-slate-500">
+                  {item.unavailableReason}
+                </p>
+              ) : null}
+            </div>
           );
         })}
       </div>
@@ -136,8 +142,7 @@ export default function OfficeWorkflowActions({
         </p>
         <p className="mb-3 text-xs text-slate-500">
           These are office outcomes. Scheduled means the office scheduled the
-          patient in the practice system, not that this app created an
-          appointment.
+          patient in the PMS. The app does not create appointments.
         </p>
         <div className="flex flex-wrap gap-2">
           {contactOutcomes.map((outcome) => (
@@ -156,6 +161,12 @@ export default function OfficeWorkflowActions({
             </Button>
           ))}
         </div>
+        {contactOutcomes.some((outcome) => !outcome.available) ? (
+          <p className="mt-2 text-xs text-slate-500">
+            {contactOutcomes.find((outcome) => outcome.unavailableReason)
+              ?.unavailableReason}
+          </p>
+        ) : null}
       </div>
 
       <div className="mt-6 grid gap-4 md:grid-cols-2">

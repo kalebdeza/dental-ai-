@@ -219,7 +219,7 @@ describe("recall workflow persistence", () => {
     );
   });
 
-  it("enables persisted office actions and keeps scheduling disabled", () => {
+  it("enables persisted office actions and Schedule in PMS guidance", () => {
     const actions = getRecallWorkflowActions({
       phone: "555-0100",
       workflowStatus: "open",
@@ -232,7 +232,9 @@ describe("recall workflow persistence", () => {
     assert.equal(byId.add_note.available, true);
     assert.equal(byId.snooze.available, true);
     assert.equal(byId.complete.available, true);
-    assert.equal(byId.schedule.available, false);
+    assert.equal(byId.schedule.available, true);
+    assert.equal(byId.schedule.label, "Schedule in PMS");
+    assert.equal(byId.call.available, true);
 
     const completed = getRecallWorkflowActions({
       phone: "555-0100",

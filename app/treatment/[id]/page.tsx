@@ -8,6 +8,7 @@ import TreatmentActions from "./TreatmentActions";
 import TreatmentWorkflowStatus from "./TreatmentWorkflowStatus";
 import {
   postOfficeWorkflow,
+  officeWorkflowSuccessMessage,
   toSnoozeIso,
 } from "@/app/components/postOfficeWorkflow";
 import type { OfficeActionId } from "@/app/components/OfficeWorkflowActions";
@@ -17,6 +18,7 @@ import {
   formatTreatmentDate,
   getPersistedTreatmentStatus,
   getTreatmentWorkflowActions,
+  SCHEDULE_IN_PMS_GUIDANCE,
   storedTreatmentRecommendation,
   toTelHref,
   type TreatmentOpportunityApiItem,
@@ -100,6 +102,7 @@ export default function TreatmentDetailPage() {
       }
 
       await loadOpportunity();
+      setNotice(officeWorkflowSuccessMessage(action, extra));
     } catch (error) {
       setNotice(
         error instanceof Error
@@ -112,12 +115,12 @@ export default function TreatmentDetailPage() {
   }
 
   async function handleAction(id: OfficeActionId) {
-    if (id === "call" || id === "schedule") {
-      if (id === "schedule") {
-        setNotice(
-          "Schedule treatment in the practice management system. This app cannot create appointments and will not mark the opportunity scheduled from this button."
-        );
-      }
+    if (id === "call") {
+      return;
+    }
+
+    if (id === "schedule") {
+      setNotice(SCHEDULE_IN_PMS_GUIDANCE);
       return;
     }
 

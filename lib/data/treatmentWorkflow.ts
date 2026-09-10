@@ -119,8 +119,8 @@ export const DESIRED_TREATMENT_STEPS = [
 
 export const DESIRED_TREATMENT_TERMINAL = "Dismissed";
 
-const SCHEDULE_UNAVAILABLE =
-  "This app cannot create appointments. Schedule treatment in the practice management system. A Scheduled contact outcome records that the office scheduled the patient; it does not create an Open Dental appointment.";
+export const SCHEDULE_IN_PMS_GUIDANCE =
+  "The app doesn't currently create appointments. Schedule this treatment in your PMS, then record the Scheduled contact outcome here.";
 
 const CALL_NO_PHONE =
   "No patient phone is stored (mobile, home, or work).";
@@ -326,10 +326,10 @@ export function getTreatmentWorkflowActions(input: {
     ),
     action(
       "schedule",
-      "Schedule Treatment",
+      "Schedule in PMS",
       "secondary",
-      false,
-      SCHEDULE_UNAVAILABLE
+      canAdvance,
+      terminal ? TERMINAL_UNAVAILABLE : undefined
     ),
     action(
       "mark_contacted",

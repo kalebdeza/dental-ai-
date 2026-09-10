@@ -5,6 +5,7 @@ import type { Tables } from "../database.types.ts";
 import { CLAIM_STATUS } from "../opendental/status.ts";
 import {
   buildClaimTimeline,
+  formatClaimFollowUpGuidance,
   getClaimNextAction,
   getClaimWorkflowActions,
   getClaimWorkflowBucket,
@@ -43,8 +44,10 @@ describe("claim workflow buckets", () => {
     const draft = claim();
     assert.equal(getClaimWorkflowBucket(draft), "draft");
     const labels = getClaimWorkflowActions(draft).map((item) => item.label);
-    assert.ok(labels.includes("Review Claim"));
-    assert.ok(labels.includes("Submit Claim"));
+    assert.ok(labels.includes("Open Claim"));
+    assert.ok(labels.includes("Submit in PMS"));
+    assert.equal(labels.includes("Submit Claim"), false);
+    assert.equal(labels.includes("Edit Claim"), false);
     assert.ok(labels.includes("Generate Narrative"));
     assert.ok(labels.includes("Add Note"));
     assert.ok(labels.includes("Snooze"));
@@ -65,7 +68,8 @@ describe("claim workflow buckets", () => {
     assert.equal(getClaimWorkflowBucket(sent), "sent");
     const labels = getClaimWorkflowActions(sent).map((item) => item.label);
     assert.ok(labels.includes("Follow Up"));
-    assert.ok(labels.includes("View Claim Details"));
+    assert.ok(labels.includes("Open Claim"));
+    assert.equal(labels.includes("View Claim Details"), false);
     assert.ok(labels.includes("Add Note"));
     assert.ok(labels.includes("Snooze"));
     assert.equal(labels.includes("Submit Claim"), false);
@@ -93,7 +97,8 @@ describe("claim workflow buckets", () => {
     });
     assert.equal(getClaimWorkflowBucket(paid), "paid");
     const labels = getClaimWorkflowActions(paid).map((item) => item.label);
-    assert.ok(labels.includes("View Payment"));
+    assert.ok(labels.includes("Open Claim"));
+    assert.equal(labels.includes("View Payment"), false);
     assert.ok(labels.includes("Mark Resolved"));
     assert.ok(labels.includes("Add Note"));
     assert.equal(labels.includes("Submit Claim"), false);
@@ -109,12 +114,19 @@ describe("claim workflow buckets", () => {
     assert.equal(getClaimWorkflowBucket(outstanding), "outstanding");
     const next = getClaimNextAction(outstanding, null);
     assert.equal(next.what.toLowerCase().includes("submit"), false);
-    const labels = getClaimWorkflowActions(outstanding).map((item) => item.label);
+    const actions = getClaimWorkflowActions(outstanding);
+    const labels = actions.map((item) => item.label);
     assert.ok(labels.includes("Follow Up"));
-    assert.ok(labels.includes("Add Note"));
-    assert.ok(labels.includes("Snooze"));
+    assert.ok(labels.includes("Open Claim"));
     assert.equal(labels.includes("Set Follow-Up Date"), false);
     assert.equal(labels.includes("Submit Claim"), false);
+    const open = actions.find((item) => item.id === "open_claim");
+    assert.equal(open?.href, "/claims/claim-1");
+    assert.equal(open?.kind, "navigate");
+    assert.equal(
+      actions.find((item) => item.id === "follow_up")?.kind,
+      "guidance"
+    );
   });
 });
 
@@ -154,5 +166,25 @@ describe("claim next action and timeline", () => {
     const denied = events.find((event) => event.label === "Denied");
     assert.equal(denied?.at, null);
     assert.equal(denied?.detail, "CO-16");
+  });
+
+  it("follow-up guidance lists claim facts and does not claim the app contacted the payer", () => {
+    const now = new Date("2026-09-20T00:00:00.000Z");
+    const text = formatClaimFollowUpGuidance(
+      claim({
+        insurance_company: "Delta",
+        status: CLAIM_STATUS.Sent,
+        remaining_balance: 250,
+        submitted_at: "2026-08-01T00:00:00.000Z",
+      }),
+      now
+    );
+    assert.match(text, /office needs to contact the payer/i);
+    assert.match(text, /Payer: Delta/);
+    assert.match(text, /Remaining balance:/);
+    assert.match(text, /Submitted:/);
+    assert.match(text, /Aging: 30\+ days/);
+    assert.doesNotMatch(text, /app contacted/i);
+    assert.doesNotMatch(text, /submitted for you/i);
   });
 });

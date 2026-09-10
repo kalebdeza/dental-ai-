@@ -288,7 +288,8 @@ describe("treatment office workflow", () => {
       workflowStatus: "open",
       completed: false,
     });
-    assert.equal(actions.find((item) => item.id === "schedule")?.available, false);
+    assert.equal(actions.find((item) => item.id === "schedule")?.available, true);
+    assert.equal(actions.find((item) => item.id === "schedule")?.label, "Schedule in PMS");
     assert.equal(
       getTreatmentContactOutcomes({
         workflowStatus: "open",
