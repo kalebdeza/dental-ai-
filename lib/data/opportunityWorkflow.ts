@@ -55,8 +55,22 @@ export const SCANNER_OWNED_FIELDS = [
 export const AUTHENTICATED_SCANNER_UPDATE_COLUMNS = [
   ...SCANNER_OWNED_FIELDS,
   "completed",
+  "close_reason",
   "updated_at",
 ] as const;
+
+export const IDENTIFIED_SNAPSHOT_FIELDS = [
+  "identified_at",
+  "identified_estimated_value",
+] as const;
+
+export const CLOSE_REASONS = [
+  "office_completed",
+  "office_dismissed",
+  "scanner_closed",
+] as const;
+
+export type CloseReason = (typeof CLOSE_REASONS)[number];
 
 export const AUTHENTICATED_WORKFLOW_UPDATE_COLUMNS = WORKFLOW_OWNED_FIELDS;
 
@@ -206,11 +220,33 @@ export function backfillWorkflowStatus(completed: boolean): WorkflowStatus {
   return completed ? "completed" : "open";
 }
 
+export function isCloseReason(value: unknown): value is CloseReason {
+  return (
+    typeof value === "string" &&
+    (CLOSE_REASONS as readonly string[]).includes(value)
+  );
+}
+
+export function closeReasonForWorkflowStatus(
+  status: WorkflowStatus
+): CloseReason | null {
+  if (status === "completed") {
+    return "office_completed";
+  }
+
+  if (status === "dismissed") {
+    return "office_dismissed";
+  }
+
+  return null;
+}
+
 export function newOpportunityWorkflowDefaults(): {
   workflow_status: "open";
   completed: false;
   contact_outcome: null;
   snoozed_until: null;
+  close_reason: null;
   last_actor_user_id: null;
   last_acted_at: null;
 } {
@@ -219,6 +255,7 @@ export function newOpportunityWorkflowDefaults(): {
     completed: false,
     contact_outcome: null,
     snoozed_until: null,
+    close_reason: null,
     last_actor_user_id: null,
     last_acted_at: null,
   };
@@ -594,6 +631,7 @@ export function workflowOwnedPatch(
   | "completed"
   | "contact_outcome"
   | "snoozed_until"
+  | "close_reason"
   | "last_actor_user_id"
   | "last_acted_at"
   | "updated_at"
@@ -610,6 +648,8 @@ export function workflowOwnedPatch(
   return {
     workflow_status: synced.workflow_status,
     completed: synced.completed,
+    close_reason:
+      closeReasonForWorkflowStatus(synced.workflow_status) ?? row.close_reason,
     contact_outcome:
       planned.eventType === "contact_outcome"
         ? planned.contactOutcome

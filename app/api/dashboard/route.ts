@@ -2,6 +2,7 @@ import { ApiResponse } from "@/lib/api/response";
 import { ApiErrorHandler } from "@/lib/api/errors";
 import { logger } from "@/lib/api/logger";
 import { requirePractice } from "@/lib/auth/requirePractice";
+import { loadOpportunityFunnelMetrics } from "@/lib/data/opportunityFunnel";
 
 export async function GET() {
   try {
@@ -143,6 +144,11 @@ export async function GET() {
       .sort((a, b) => b.revenue - a.revenue)
       .slice(0, 5);
 
+    const funnel = await loadOpportunityFunnelMetrics(
+      supabase,
+      practice.id
+    );
+
     return ApiResponse.ok({
       priorityPatients,
       totalRecoverableRevenue,
@@ -161,6 +167,7 @@ export async function GET() {
         treatmentOpportunities.length,
 
       totalPatients: patientCount ?? 0,
+      funnel,
     });
   } catch (error) {
     logger.error(

@@ -11,6 +11,7 @@ import {
 import {
   AUTHENTICATED_SCANNER_UPDATE_COLUMNS,
   AUTHENTICATED_WORKFLOW_UPDATE_COLUMNS,
+  IDENTIFIED_SNAPSHOT_FIELDS,
   APPLY_OPPORTUNITY_WORKFLOW_RPC,
   CONTACT_OUTCOME_STATUS,
   IMMUTABLE_OPPORTUNITY_FIELDS,
@@ -75,6 +76,9 @@ function opportunity(
     snoozed_until: null,
     last_actor_user_id: null,
     last_acted_at: null,
+    close_reason: null,
+    identified_at: "2026-09-01T00:00:00.000Z",
+    identified_estimated_value: 180,
     created_at: "2026-09-01T00:00:00.000Z",
     updated_at: "2026-09-01T00:00:00.000Z",
     ...overrides,
@@ -316,6 +320,7 @@ describe("opportunity workflow backfill", () => {
     assert.equal(newOpportunityWorkflowDefaults().snoozed_until, null);
     assert.equal(newOpportunityWorkflowDefaults().last_actor_user_id, null);
     assert.equal(newOpportunityWorkflowDefaults().last_acted_at, null);
+    assert.equal(newOpportunityWorkflowDefaults().close_reason, null);
   });
 });
 
@@ -722,6 +727,7 @@ describe("opportunity workflow data-layer API", () => {
 
     assert.equal(dismissed.opportunity.workflow_status, "dismissed");
     assert.equal(dismissed.opportunity.completed, false);
+    assert.equal(dismissed.opportunity.close_reason, "office_dismissed");
     assert.equal(dismissed.activity.event_type, "dismiss");
     assert.equal(memory.deleteCalls(), 0);
     assert.equal(memory.opportunities.length, 1);
@@ -755,6 +761,7 @@ describe("opportunity workflow data-layer API", () => {
 
     assert.equal(completed.opportunity.workflow_status, "completed");
     assert.equal(completed.opportunity.completed, true);
+    assert.equal(completed.opportunity.close_reason, "office_completed");
     assert.equal(memory.deleteCalls(), 0);
 
     const plan = planOpportunityMerge(
@@ -908,6 +915,11 @@ describe("opportunity workflow privilege boundary", () => {
 
     for (const column of AUTHENTICATED_SCANNER_UPDATE_COLUMNS) {
       assert.equal(isAuthenticatedDirectUpdateColumn(column), true);
+      assert.equal(isAuthenticatedWorkflowUpdateColumn(column), false);
+    }
+
+    for (const column of IDENTIFIED_SNAPSHOT_FIELDS) {
+      assert.equal(isAuthenticatedDirectUpdateColumn(column), false);
       assert.equal(isAuthenticatedWorkflowUpdateColumn(column), false);
     }
 

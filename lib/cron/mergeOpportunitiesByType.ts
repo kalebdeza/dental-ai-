@@ -334,10 +334,11 @@ async function completeOpportunities(
     const chunk = ids.slice(index, index + UPDATE_CHUNK);
     const { error } = await supabase
       .from("revenue_opportunities")
-      .update({
-        completed: true,
-        updated_at: new Date().toISOString(),
-      })
+        .update({
+          completed: true,
+          close_reason: "scanner_closed",
+          updated_at: new Date().toISOString(),
+        })
       .eq("practice_id", practiceId)
       .in("id", chunk);
 
@@ -366,10 +367,13 @@ async function insertOpportunities(
       opportunity_type: opportunityType,
       priority: opportunity.priority,
       estimated_value: opportunity.estimated_value,
+      identified_estimated_value: opportunity.estimated_value,
+      identified_at: new Date().toISOString(),
       confidence_score: opportunity.confidence_score ?? null,
       reason: opportunity.reason ?? null,
       recommended_action: opportunity.recommended_action ?? null,
       completed: false,
+      close_reason: null,
     }));
 
     const { data, error } = await supabase

@@ -354,6 +354,8 @@ describe("mergeOpportunitiesByType writer", () => {
           completed: false,
           priority: "Low",
           estimated_value: 1,
+          identified_estimated_value: 1,
+          identified_at: "2026-09-01T00:00:00.000Z",
           reason: "old",
           recommended_action: "old",
         },
@@ -378,6 +380,8 @@ describe("mergeOpportunitiesByType writer", () => {
     assert.equal(rows.length, 1);
     assert.equal(rows[0]?.id, "opp-1");
     assert.equal(rows[0]?.reason, "second");
+    assert.equal(rows[0]?.estimated_value, 200);
+    assert.equal(rows[0]?.identified_estimated_value, 1);
     assert.equal(rows[0]?.completed, false);
   });
 
@@ -415,6 +419,7 @@ describe("mergeOpportunitiesByType writer", () => {
     const old = rows.find((row) => row.id === "old-recall");
     const created = rows.find((row) => row.recall_id === "rec-new");
     assert.equal(old?.completed, true);
+    assert.equal(old?.close_reason, "scanner_closed");
     assert.ok(old);
     assert.ok(created);
     assert.equal(

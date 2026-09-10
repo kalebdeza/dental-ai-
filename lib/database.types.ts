@@ -947,12 +947,15 @@ export type Database = {
       revenue_opportunities: {
         Row: {
           claim_id: string | null
+          close_reason: string | null
           completed: boolean
           confidence_score: number | null
           contact_outcome: string | null
           created_at: string
           estimated_value: number
           id: string
+          identified_at: string
+          identified_estimated_value: number
           last_acted_at: string | null
           last_actor_user_id: string | null
           opportunity_type: string
@@ -969,12 +972,15 @@ export type Database = {
         }
         Insert: {
           claim_id?: string | null
+          close_reason?: string | null
           completed?: boolean
           confidence_score?: number | null
           contact_outcome?: string | null
           created_at?: string
           estimated_value?: number
           id?: string
+          identified_at?: string
+          identified_estimated_value?: number
           last_acted_at?: string | null
           last_actor_user_id?: string | null
           opportunity_type: string
@@ -991,12 +997,15 @@ export type Database = {
         }
         Update: {
           claim_id?: string | null
+          close_reason?: string | null
           completed?: boolean
           confidence_score?: number | null
           contact_outcome?: string | null
           created_at?: string
           estimated_value?: number
           id?: string
+          identified_at?: string
+          identified_estimated_value?: number
           last_acted_at?: string | null
           last_actor_user_id?: string | null
           opportunity_type?: string

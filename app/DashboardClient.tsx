@@ -8,6 +8,8 @@ import RevenueChart from "./components/RevenueChart";
 import OpportunityChart from "./components/OpportunityChart";
 import AIInsights from "./components/AIInsights";
 import AIRevenueBrief from "./components/AIRevenueBrief";
+import RevenueRecoveryFunnel from "./components/RevenueRecoveryFunnel";
+import type { OpportunityFunnelMetrics } from "@/lib/data/opportunityFunnel";
 
 type DashboardData = {
   totalRecoverableRevenue: number;
@@ -20,6 +22,7 @@ type DashboardData = {
   treatmentPatients: number;
 
   totalPatients: number;
+  funnel: OpportunityFunnelMetrics;
 
   priorityPatients: {
     patientId: string;
@@ -42,7 +45,44 @@ function isDashboardData(value: unknown): value is DashboardData {
     typeof candidate.claimsRevenue === "number" &&
     typeof candidate.recallRevenue === "number" &&
     typeof candidate.treatmentRevenue === "number" &&
-    Array.isArray(candidate.priorityPatients)
+    Array.isArray(candidate.priorityPatients) &&
+    isFunnelMetrics(candidate.funnel)
+  );
+}
+
+function isFunnelStage(value: unknown): boolean {
+  if (typeof value !== "object" || value === null) {
+    return false;
+  }
+
+  const stage = value as {
+    count?: unknown;
+    patientCount?: unknown;
+    estimatedValue?: unknown;
+  };
+
+  return (
+    typeof stage.count === "number" &&
+    typeof stage.patientCount === "number" &&
+    typeof stage.estimatedValue === "number"
+  );
+}
+
+function isFunnelMetrics(value: unknown): value is OpportunityFunnelMetrics {
+  if (typeof value !== "object" || value === null) {
+    return false;
+  }
+
+  const funnel = value as OpportunityFunnelMetrics;
+
+  return (
+    isFunnelStage(funnel.identified) &&
+    isFunnelStage(funnel.contacted) &&
+    isFunnelStage(funnel.scheduled) &&
+    isFunnelStage(funnel.officeCompleted) &&
+    isFunnelStage(funnel.openPipeline) &&
+    typeof funnel.officeDismissedCount === "number" &&
+    typeof funnel.scannerClosedCount === "number"
   );
 }
 
@@ -295,6 +335,8 @@ export default function DashboardClient() {
           color="#ea580c"
         />
       </div>
+
+      <RevenueRecoveryFunnel funnel={data.funnel} />
 
       {/* Charts */}
 
