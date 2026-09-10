@@ -25,7 +25,8 @@ type DashboardData = {
   funnel: OpportunityFunnelMetrics;
 
   priorityPatients: {
-    patientId: string;
+    opportunityId: string;
+    patientId: string | null;
     name: string;
     type: string;
     revenue: number;
@@ -584,16 +585,23 @@ export default function DashboardClient() {
       fontSize: 28,
     }}
   >
-    🔥 Today's Highest Priority Patients
+    🔥 Highest priority today
   </h2>
 
-{data.priorityPatients.map((patient, index) => (
+  {data.priorityPatients.length === 0 ? (
+    <p style={{ color: "#64748b" }}>
+      No open or contacted opportunities need attention today.
+    </p>
+  ) : (
+    data.priorityPatients.map((patient) => (
   <div
-    key={index}
+    key={patient.opportunityId}
     style={{
       display: "flex",
       justifyContent: "space-between",
       alignItems: "center",
+      flexWrap: "wrap",
+      gap: 12,
       padding: "18px 0",
       borderBottom: "1px solid #e2e8f0",
     }}
@@ -625,14 +633,26 @@ export default function DashboardClient() {
         gap: 20,
       }}
     >
-      <div
-        style={{
-          fontSize: 22,
-          fontWeight: 700,
-          color: "#16a34a",
-        }}
-      >
-        ${patient.revenue.toLocaleString()}
+      <div>
+        <div
+          style={{
+            color: "#64748b",
+            fontSize: 12,
+            fontWeight: 700,
+            textAlign: "right",
+          }}
+        >
+          Estimated
+        </div>
+        <div
+          style={{
+            fontSize: 22,
+            fontWeight: 700,
+            color: "#16a34a",
+          }}
+        >
+          ${patient.revenue.toLocaleString()}
+        </div>
       </div>
 
       <button
@@ -646,16 +666,15 @@ export default function DashboardClient() {
           fontWeight: 700,
         }}
         onClick={() => {
-  if ("patientId" in patient) {
-    window.location.href = `/patients/${patient.patientId}`;
-  }
-}}
+          window.location.href = `/opportunities/${patient.opportunityId}`;
+        }}
       >
         Open
       </button>
     </div>
   </div>
-))}
+    ))
+  )}
  
 </div>
 

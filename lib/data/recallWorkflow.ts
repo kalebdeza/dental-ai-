@@ -39,6 +39,8 @@ export type RecallOpportunityRow = Pick<
   | "workflow_status"
   | "contact_outcome"
   | "snoozed_until"
+  | "identified_at"
+  | "last_acted_at"
 >;
 
 export type RecallOpportunityApiItem = {
@@ -54,6 +56,8 @@ export type RecallOpportunityApiItem = {
   workflowStatus: string;
   contactOutcome: string | null;
   snoozedUntil: string | null;
+  identifiedAt: string | null;
+  lastActedAt: string | null;
   phone: string | null;
   recallType: string | null;
   dueDate: string | null;
@@ -287,6 +291,8 @@ export function mapRecallOpportunity(
     workflowStatus: readStoredWorkflowStatus(opportunity),
     contactOutcome: opportunity.contact_outcome,
     snoozedUntil: opportunity.snoozed_until,
+    identifiedAt: opportunity.identified_at ?? null,
+    lastActedAt: opportunity.last_acted_at ?? null,
     phone,
     recallType,
     dueDate: recallRow?.due_date ?? null,

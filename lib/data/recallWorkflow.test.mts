@@ -147,6 +147,8 @@ describe("recall opportunity mapping", () => {
         workflow_status: "open",
         contact_outcome: null,
         snoozed_until: null,
+        identified_at: "2026-09-01T00:00:00.000Z",
+        last_acted_at: null,
       },
       patient({ mobile_phone: "555-0100" }),
       recallRow({ due_date: "2026-01-15", recall_type: "Prophy" })
@@ -173,6 +175,8 @@ describe("recall opportunity mapping", () => {
         workflow_status: "open",
         contact_outcome: null,
         snoozed_until: null,
+        identified_at: "2026-09-01T00:00:00.000Z",
+        last_acted_at: null,
       },
       null,
       null

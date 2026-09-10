@@ -96,6 +96,8 @@ describe("treatment opportunity mapping", () => {
         workflow_status: "open",
         contact_outcome: null,
         snoozed_until: null,
+        identified_at: "2026-09-01T00:00:00.000Z",
+        last_acted_at: null,
       },
       patient({
         mobile_phone: "555-0100",
@@ -131,6 +133,8 @@ describe("treatment opportunity mapping", () => {
         workflow_status: "open",
         contact_outcome: null,
         snoozed_until: null,
+        identified_at: "2026-09-01T00:00:00.000Z",
+        last_acted_at: null,
       },
       null,
       null,

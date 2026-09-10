@@ -96,7 +96,10 @@ function isPaidDown(claim: Claim): boolean {
   );
 }
 
-function isAging(claim: Claim, now: Date): boolean {
+export function isClaimAging(
+  claim: Pick<Claim, "submitted_at" | "remaining_balance">,
+  now: Date = new Date()
+): boolean {
   if (!claim.submitted_at || Number(claim.remaining_balance) <= 0) {
     return false;
   }
@@ -273,7 +276,7 @@ export function getClaimNextAction(
   }
 
   const bucket = getClaimWorkflowBucket(claim, now);
-  const aging = isAging(claim, now);
+  const aging = isClaimAging(claim, now);
 
   switch (bucket) {
     case "draft":

@@ -46,6 +46,8 @@ export type TreatmentOpportunityRow = Pick<
   | "workflow_status"
   | "contact_outcome"
   | "snoozed_until"
+  | "identified_at"
+  | "last_acted_at"
 >;
 
 export type TreatmentOpportunityApiItem = {
@@ -61,6 +63,8 @@ export type TreatmentOpportunityApiItem = {
   workflowStatus: string;
   contactOutcome: string | null;
   snoozedUntil: string | null;
+  identifiedAt: string | null;
+  lastActedAt: string | null;
   phone: string | null;
   nextVisit: string | null;
   procedureId: string | null;
@@ -280,6 +284,8 @@ export function mapTreatmentOpportunity(
     workflowStatus: readStoredWorkflowStatus(opportunity),
     contactOutcome: opportunity.contact_outcome,
     snoozedUntil: opportunity.snoozed_until,
+    identifiedAt: opportunity.identified_at ?? null,
+    lastActedAt: opportunity.last_acted_at ?? null,
     phone: pickPatientPhone(patient),
     nextVisit: patient?.next_visit ?? null,
     procedureId: opportunity.procedure_id,

@@ -1,19 +1,31 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
+import WorkQueueBoard from "../components/WorkQueueBoard";
+import type { RecallOpportunityApiItem } from "@/lib/data/recallWorkflow";
+import { toWorkQueueItem, type WorkQueueItem } from "@/lib/data/workQueue";
 
-type Recall = {
-  id: string;
-  patient: string;
-  reason: string | null;
-  estimated_value: number;
-  priority: string;
-  completed: boolean;
-};
+function fromRecall(row: RecallOpportunityApiItem): WorkQueueItem {
+  return toWorkQueueItem({
+    id: row.id,
+    patient: row.patient,
+    patientId: row.patientId,
+    opportunityType: row.opportunity_type,
+    reason: row.reason,
+    estimatedValue: row.estimated_value,
+    priority: row.priority,
+    workflowStatus: row.workflowStatus,
+    contactOutcome: row.contactOutcome,
+    snoozedUntil: row.snoozedUntil,
+    identifiedAt: row.identifiedAt,
+    lastActedAt: row.lastActedAt,
+    dueDate: row.dueDate,
+    completed: row.completed,
+  });
+}
 
 export default function RecallPage() {
-  const [recalls, setRecalls] = useState<Recall[]>([]);
+  const [items, setItems] = useState<WorkQueueItem[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -21,10 +33,8 @@ export default function RecallPage() {
       try {
         const res = await fetch("/api/recall");
         const data = await res.json();
-
-        setRecalls(
-          Array.isArray(data) ? data : []
-        );
+        const rows = Array.isArray(data) ? data : [];
+        setItems(rows.map(fromRecall));
       } catch {
         console.error("Failed to load recalls.");
       } finally {
@@ -39,17 +49,6 @@ export default function RecallPage() {
     return <h2>Loading Recall Dashboard...</h2>;
   }
 
-  const totalRevenue = recalls.reduce(
-    (sum, recall) =>
-      sum +
-      Number(recall.estimated_value ?? 0),
-    0
-  );
-
-  const highPriority = recalls.filter(
-    (recall) => recall.priority === "High"
-  ).length;
-
   return (
     <main>
       <h1
@@ -58,7 +57,7 @@ export default function RecallPage() {
           marginBottom: 8,
         }}
       >
-        📞 Recall Revenue Recovery
+        📞 Recall work queue
       </h1>
 
       <p
@@ -68,199 +67,14 @@ export default function RecallPage() {
           marginBottom: 30,
         }}
       >
-        AI is identifying overdue patients and
-        estimating recoverable production.
+        Today shows open and contacted recalls that are not snoozed.
+        Estimated values are not recovered revenue.
       </p>
 
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns:
-            "repeat(auto-fit,minmax(220px,1fr))",
-          gap: 20,
-          marginBottom: 30,
-        }}
-      >
-        <div
-          style={{
-            background: "white",
-            borderRadius: 16,
-            padding: 24,
-            boxShadow:
-              "0 2px 10px rgba(0,0,0,.08)",
-          }}
-        >
-          <h3>💰 Recoverable Revenue</h3>
-
-          <h1>
-            ${totalRevenue.toLocaleString()}
-          </h1>
-        </div>
-
-        <div
-          style={{
-            background: "white",
-            borderRadius: 16,
-            padding: 24,
-            boxShadow:
-              "0 2px 10px rgba(0,0,0,.08)",
-          }}
-        >
-          <h3>👥 Recall Patients</h3>
-
-          <h1>{recalls.length}</h1>
-        </div>
-
-        <div
-          style={{
-            background: "white",
-            borderRadius: 16,
-            padding: 24,
-            boxShadow:
-              "0 2px 10px rgba(0,0,0,.08)",
-          }}
-        >
-          <h3>🔥 High Priority</h3>
-
-          <h1>{highPriority}</h1>
-        </div>
-      </div>
-
-      <div
-        style={{
-          background: "white",
-          borderRadius: 16,
-          overflow: "hidden",
-          boxShadow:
-            "0 2px 10px rgba(0,0,0,.08)",
-        }}
-      >
-        {recalls.length === 0 ? (
-          <div style={{ padding: 24 }}>
-            <p>
-              No open recall opportunities found.
-            </p>
-          </div>
-        ) : (
-          <table
-            style={{
-              width: "100%",
-              borderCollapse: "collapse",
-            }}
-          >
-            <thead
-              style={{
-                background: "#2563eb",
-                color: "white",
-              }}
-            >
-              <tr>
-                <th
-                  style={{
-                    padding: 16,
-                    textAlign: "left",
-                  }}
-                >
-                  Patient
-                </th>
-
-                <th
-                  style={{
-                    padding: 16,
-                    textAlign: "left",
-                  }}
-                >
-                  Opportunity
-                </th>
-
-                <th
-                  style={{
-                    padding: 16,
-                    textAlign: "left",
-                  }}
-                >
-                  Revenue
-                </th>
-
-                <th
-                  style={{
-                    padding: 16,
-                    textAlign: "left",
-                  }}
-                >
-                  Priority
-                </th>
-
-                <th
-                  style={{
-                    padding: 16,
-                    textAlign: "left",
-                  }}
-                >
-                  Action
-                </th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {recalls.map((recall) => (
-                <tr
-                  key={recall.id}
-                  style={{
-                    borderBottom:
-                      "1px solid #e2e8f0",
-                  }}
-                >
-                  <td style={{ padding: 16 }}>
-                    {recall.patient}
-                  </td>
-
-                  <td style={{ padding: 16 }}>
-                    {recall.reason ??
-                      "Overdue recall"}
-                  </td>
-
-                  <td style={{ padding: 16 }}>
-                    $
-                    {Number(
-                      recall.estimated_value ?? 0
-                    ).toLocaleString()}
-                  </td>
-
-                  <td style={{ padding: 16 }}>
-                    {recall.priority === "High"
-                      ? "🔴 High"
-                      : recall.priority ===
-                          "Medium"
-                        ? "🟡 Medium"
-                        : "🟢 Low"}
-                  </td>
-
-                  <td style={{ padding: 16 }}>
-                    <Link
-                      href={`/recall/${recall.id}`}
-                    >
-                      <button
-                        style={{
-                          background: "#2563eb",
-                          color: "white",
-                          border: "none",
-                          borderRadius: 8,
-                          padding:
-                            "10px 16px",
-                          cursor: "pointer",
-                        }}
-                      >
-                        Review →
-                      </button>
-                    </Link>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
+      <WorkQueueBoard
+        items={items}
+        hrefFor={(item) => `/recall/${item.id}`}
+      />
     </main>
   );
 }

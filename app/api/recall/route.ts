@@ -12,8 +12,8 @@ import {
 } from "@/lib/data/recallWorkflow";
 import {
   getOpportunityActivities,
-  isActiveQueueOpportunity,
 } from "@/lib/data/opportunityWorkflow";
+import { isWorkQueueEligible } from "@/lib/data/workQueue";
 
 export async function GET(req: NextRequest) {
   try {
@@ -43,9 +43,8 @@ export async function GET(req: NextRequest) {
       throw error;
     }
 
-    const now = new Date();
     const rows = (recalls ?? []).filter((row) =>
-      opportunityId ? true : isActiveQueueOpportunity(row, now)
+      opportunityId ? true : isWorkQueueEligible(row)
     );
     const patientIds = [
       ...new Set(
