@@ -30,6 +30,7 @@ export default function Sidebar() {
       links: [
         { name: "🔌 Connect Practice", href: "/connect" },
         { name: "👥 Patients", href: "/patients" },
+        { name: "📅 Scheduling", href: "/schedule" },
         { name: "📄 Claims", href: "/claims" },
       ],
     },
@@ -100,7 +101,11 @@ export default function Sidebar() {
             </div>
 
             {section.links.map((link) => {
-              const active = pathname === link.href;
+              const active =
+                link.href === "/"
+                  ? pathname === "/"
+                  : pathname === link.href ||
+                    pathname.startsWith(`${link.href}/`);
 
               return (
                 <Link

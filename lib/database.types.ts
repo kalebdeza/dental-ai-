@@ -94,16 +94,24 @@ export type Database = {
       appointments: {
         Row: {
           appointment_type: string | null
+          cancellation_reason: string | null
+          cancelled_at: string | null
+          confirmation_status: string
           created_at: string
           end_time: string
           id: string
-          integration_id: string
+          integration_id: string | null
           last_synced_at: string | null
           notes: string | null
+          offered_slots: Json | null
           operatory: string | null
+          opportunity_id: string | null
           patient_id: string
           practice_id: string
           provider_id: string | null
+          provider_name: string | null
+          reschedule_status: string
+          source: string
           source_appointment_id: string
           start_time: string
           status: string
@@ -111,16 +119,24 @@ export type Database = {
         }
         Insert: {
           appointment_type?: string | null
+          cancellation_reason?: string | null
+          cancelled_at?: string | null
+          confirmation_status?: string
           created_at?: string
           end_time: string
           id?: string
-          integration_id: string
+          integration_id?: string | null
           last_synced_at?: string | null
           notes?: string | null
+          offered_slots?: Json | null
           operatory?: string | null
+          opportunity_id?: string | null
           patient_id: string
           practice_id: string
           provider_id?: string | null
+          provider_name?: string | null
+          reschedule_status?: string
+          source?: string
           source_appointment_id: string
           start_time: string
           status: string
@@ -128,16 +144,24 @@ export type Database = {
         }
         Update: {
           appointment_type?: string | null
+          cancellation_reason?: string | null
+          cancelled_at?: string | null
+          confirmation_status?: string
           created_at?: string
           end_time?: string
           id?: string
           integration_id?: string
           last_synced_at?: string | null
           notes?: string | null
+          offered_slots?: Json | null
           operatory?: string | null
+          opportunity_id?: string | null
           patient_id?: string
           practice_id?: string
           provider_id?: string | null
+          provider_name?: string | null
+          reschedule_status?: string
+          source?: string
           source_appointment_id?: string
           start_time?: string
           status?: string
@@ -149,6 +173,13 @@ export type Database = {
             columns: ["integration_id"]
             isOneToOne: false
             referencedRelation: "integrations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointments_opportunity_id_fkey"
+            columns: ["opportunity_id"]
+            isOneToOne: false
+            referencedRelation: "revenue_opportunities"
             referencedColumns: ["id"]
           },
           {
@@ -170,6 +201,57 @@ export type Database = {
             columns: ["provider_id"]
             isOneToOne: false
             referencedRelation: "providers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      appointment_events: {
+        Row: {
+          appointment_id: string
+          created_at: string
+          event_type: string
+          id: string
+          metadata: Json | null
+          new_state: string | null
+          previous_state: string | null
+          practice_id: string
+          source: string
+        }
+        Insert: {
+          appointment_id: string
+          created_at?: string
+          event_type: string
+          id?: string
+          metadata?: Json | null
+          new_state?: string | null
+          previous_state?: string | null
+          practice_id: string
+          source?: string
+        }
+        Update: {
+          appointment_id?: string
+          created_at?: string
+          event_type?: string
+          id?: string
+          metadata?: Json | null
+          new_state?: string | null
+          previous_state?: string | null
+          practice_id?: string
+          source?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "appointment_events_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointment_events_practice_id_fkey"
+            columns: ["practice_id"]
+            isOneToOne: false
+            referencedRelation: "practices"
             referencedColumns: ["id"]
           },
         ]
@@ -1283,6 +1365,221 @@ export type Database = {
             columns: ["procedure_id"]
             isOneToOne: false
             referencedRelation: "procedures"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      scheduling_jobs: {
+        Row: {
+          appointment_id: string | null
+          attempts: number
+          created_at: string
+          dedupe_key: string
+          id: string
+          job_type: string
+          last_error: string | null
+          opportunity_id: string | null
+          patient_id: string | null
+          practice_id: string
+          run_after: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          appointment_id?: string | null
+          attempts?: number
+          created_at?: string
+          dedupe_key: string
+          id?: string
+          job_type: string
+          last_error?: string | null
+          opportunity_id?: string | null
+          patient_id?: string | null
+          practice_id: string
+          run_after?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          appointment_id?: string | null
+          attempts?: number
+          created_at?: string
+          dedupe_key?: string
+          id?: string
+          job_type?: string
+          last_error?: string | null
+          opportunity_id?: string | null
+          patient_id?: string | null
+          practice_id?: string
+          run_after?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scheduling_jobs_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scheduling_jobs_opportunity_id_fkey"
+            columns: ["opportunity_id"]
+            isOneToOne: false
+            referencedRelation: "revenue_opportunities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scheduling_jobs_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scheduling_jobs_practice_id_fkey"
+            columns: ["practice_id"]
+            isOneToOne: false
+            referencedRelation: "practices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sms_conversations: {
+        Row: {
+          appointment_id: string | null
+          created_at: string
+          id: string
+          last_inbound_at: string | null
+          last_outbound_at: string | null
+          opted_out: boolean
+          patient_id: string
+          practice_id: string
+          state: string
+          updated_at: string
+        }
+        Insert: {
+          appointment_id?: string | null
+          created_at?: string
+          id?: string
+          last_inbound_at?: string | null
+          last_outbound_at?: string | null
+          opted_out?: boolean
+          patient_id: string
+          practice_id: string
+          state?: string
+          updated_at?: string
+        }
+        Update: {
+          appointment_id?: string | null
+          created_at?: string
+          id?: string
+          last_inbound_at?: string | null
+          last_outbound_at?: string | null
+          opted_out?: boolean
+          patient_id?: string
+          practice_id?: string
+          state?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sms_conversations_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sms_conversations_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sms_conversations_practice_id_fkey"
+            columns: ["practice_id"]
+            isOneToOne: false
+            referencedRelation: "practices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sms_messages: {
+        Row: {
+          appointment_id: string | null
+          body: string
+          conversation_id: string | null
+          created_at: string
+          direction: string
+          error: string | null
+          id: string
+          message_type: string
+          patient_id: string
+          practice_id: string
+          provider: string
+          provider_message_id: string | null
+          status: string
+        }
+        Insert: {
+          appointment_id?: string | null
+          body: string
+          conversation_id?: string | null
+          created_at?: string
+          direction: string
+          error?: string | null
+          id?: string
+          message_type: string
+          patient_id: string
+          practice_id: string
+          provider?: string
+          provider_message_id?: string | null
+          status?: string
+        }
+        Update: {
+          appointment_id?: string | null
+          body?: string
+          conversation_id?: string | null
+          created_at?: string
+          direction?: string
+          error?: string | null
+          id?: string
+          message_type?: string
+          patient_id?: string
+          practice_id?: string
+          provider?: string
+          provider_message_id?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sms_messages_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sms_messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "sms_conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sms_messages_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sms_messages_practice_id_fkey"
+            columns: ["practice_id"]
+            isOneToOne: false
+            referencedRelation: "practices"
             referencedColumns: ["id"]
           },
         ]

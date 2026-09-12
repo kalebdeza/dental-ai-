@@ -47,6 +47,11 @@ export function createMemorySupabase(seed: Record<string, Row[]> = {}) {
     opendental_claimprocs: [],
     opportunity_payment_attributions: [],
     opportunity_payment_attribution_events: [],
+    appointments: [],
+    appointment_events: [],
+    sms_conversations: [],
+    sms_messages: [],
+    scheduling_jobs: [],
   };
 
   for (const [table, rows] of Object.entries(seed)) {
